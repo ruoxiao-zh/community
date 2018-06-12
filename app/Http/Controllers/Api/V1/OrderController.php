@@ -206,10 +206,10 @@ class OrderController extends BaseController
 
             // 如果是通过分享下单的, 将订单数据写入团长中
             //            if ($is_buy_for_commander == 1 && $order_id) {
-            //                $commander_info = CommunityCommander::find($commander_id);
+            //                $commander_info = Commander::find($commander_id);
             //                if ($commander_info) {
             //                    // 写入团长订单数据
-            //                    CommunityCommanderOrder::create([
+            //                    CommanderOrder::create([
             //                        'order_id'           => $order_id,
             //                        'royalty_rate'       => $commander_info->royalty_rate,
             //                        'royalty_money'      => $total_money * ($commander_info->royalty_rate) / 100,
@@ -217,7 +217,7 @@ class OrderController extends BaseController
             //                    ]);
 
             // 更新团长订单总销售额, 订单总提成, 团长提成剩余金额
-            //                    CommunityCommander::where('id', $commander_id)->update([
+            //                    Commander::where('id', $commander_id)->update([
             //                        // 团长订单总销售额
             //                        'total_money'    => ($commander_info->total_money) + $total_money,
             //                        // 团长总提成
@@ -227,12 +227,12 @@ class OrderController extends BaseController
             //                    ]);
 
             //                    // 更新团长订单总提成
-            //                    CommunityCommander::where('id', $commander_id)->update([
+            //                    Commander::where('id', $commander_id)->update([
             //                        'withdraw_money' => ($commander_info->withdraw_money) + ($total_money * ($commander_info->royalty_rate) / 100)
             //                    ]);
             //
             //                    // 更新团长提成剩余金额
-            //                    CommunityCommander::where('id', $commander_id)->update([
+            //                    Commander::where('id', $commander_id)->update([
             //                        'residue_money' => ($commander_info->residue_money) + ($total_money * ($commander_info->royalty_rate) / 100)
             //                    ]);
             //                }
@@ -267,7 +267,7 @@ class OrderController extends BaseController
      */
     public function confirmOrder()
     {
-        //        $order = CommunityGroupOrder::where('order_status', 3)->where('express', '!=', '')->where('express_number', '!=', '')->get();
+        //        $order = GroupOrder::where('order_status', 3)->where('express', '!=', '')->where('express_number', '!=', '')->get();
         $order = CommunityGroupOrder::where('order_status', 3)->get();
         if ($order) {
             $order = $order->toArray();

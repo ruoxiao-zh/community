@@ -2,24 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 2018/4/2
- * Time: 11:58 AM
+ * Date: 2018/3/31
+ * Time: 8:39 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 社区团购团长提成订单
+ * 社区团购核销员模型
  *
- * Class CommunityCommanderOrder
+ * Class CheckCodeManager
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityCommanderOrder extends Model
+class CheckCodeManager extends Model
 {
-    protected $table = 'community_commander_order';
+    protected $table = 'check_code_manager';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

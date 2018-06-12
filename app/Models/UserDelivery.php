@@ -3,23 +3,23 @@
  * Created by PhpStorm.
  * User: ellison
  * Date: 2018/6/4
- * Time: 3:38 PM
+ * Time: 3:39 PM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 取货点模型
+ * 用户取货点
  *
- * Class CommunityDeliveryArea
+ * Class UserDelivery
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityDeliveryArea extends Model
+class UserDelivery extends Model
 {
-    protected $table = 'community_delivery_area';
+    protected $table = 'user_delivery';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

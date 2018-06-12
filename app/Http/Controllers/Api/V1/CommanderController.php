@@ -117,7 +117,7 @@ class CommanderController extends BaseController
         $obj->openid = $openid;
 //        $obj->royalty_rate = $royalty_rate;
 
-        // $is_insert = CommunityCommander::where('community_small_id', $this->smallid)->where('delivery_id', $delivery_id)->where('openid', $openid)->first();
+        // $is_insert = Commander::where('community_small_id', $this->smallid)->where('delivery_id', $delivery_id)->where('openid', $openid)->first();
         $is_insert = CommunityCommander::where('community_small_id', $this->smallid)->where('openid',
             $openid)->where('is_delete', 0)->first();
         if ($is_insert) {
@@ -779,12 +779,12 @@ class CommanderController extends BaseController
 //            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
 //        }
 //
-//        $order_goods_id = CommunityGroupOrderDetail::where('order_id', 228)->get();
+//        $order_goods_id = GroupOrderDetail::where('order_id', 228)->get();
 //        $commander_money = 0;
 //        if ($order_goods_id) {
 //            foreach ($order_goods_id as $key => $value) {
 //                $goods_id = $value->goods_id;
-//                $single_goods_royalty_rate = CommunityGroupDetail::where('id', $goods_id)->first();
+//                $single_goods_royalty_rate = GroupDetail::where('id', $goods_id)->first();
 //                $single_order_goods_withdraw = ($value->goods_sum) * ($single_goods_royalty_rate->royalty_rate) / 100;
 //                $commander_money += $single_order_goods_withdraw;
 //            }

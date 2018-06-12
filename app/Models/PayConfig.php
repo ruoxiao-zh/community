@@ -2,24 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 2018/3/30
- * Time: 2:04 PM
+ * Date: 30/03/2018
+ * Time: 11:07 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 社区团购客服模型
+ * 社区团购支付配置
  *
- * Class CommunityCustomerService
+ * Class PayConfig
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityCustomerService extends Model
+class PayConfig extends Model
 {
-    protected $table = 'community_customer_service';
+    protected $table = 'pay';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

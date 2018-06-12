@@ -2,17 +2,17 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 2018/4/21
- * Time: 1:58 PM
+ * Date: 2018/5/7
+ * Time: 11:35 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CommunityUserAddress extends Model
+class UserRecommend extends Model
 {
-    protected $table = 'community_user_address';
+    protected $table = 'user_recommend';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

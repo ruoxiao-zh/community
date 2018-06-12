@@ -104,7 +104,7 @@ class CheckCodeController extends BaseController
         if ($level == 1) {
             $delivery_id = null;
             $obj->level = 1;
-//            $is_insert_level_euql_1 = CommunityCheckCodeManager::where('community_small_id', $this->smallid)->where('level', 1)->first();
+//            $is_insert_level_euql_1 = CheckCodeManager::where('community_small_id', $this->smallid)->where('level', 1)->first();
 //            if ($is_insert_level_euql_1) {
 //                $is_insert_level_euql_1->save();
 

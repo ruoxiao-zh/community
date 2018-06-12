@@ -2,24 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 2018/4/12
- * Time: 11:09 AM
+ * Date: 2018/3/31
+ * Time: 8:43 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 社区团购用户点击团购信息
+ * 社区团购订单详情
  *
- * Class CommunityGroupUserClick
+ * Class GroupOrderDetail
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityGroupUserClick extends Model
+class GroupOrderDetail extends Model
 {
-    protected $table = 'community_group_user_click';
+    protected $table = 'group_order_detail';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

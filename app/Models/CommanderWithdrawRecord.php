@@ -2,24 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 2018/3/30
- * Time: 2:59 PM
+ * Date: 2018/5/28
+ * Time: 8:44 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 社区团购拼团详情
+ * 团长提现记录
  *
- * Class CommunityGroupDetail
+ * Class CommanderWithdrawRecord
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityGroupDetail extends Model
+class CommanderWithdrawRecord extends Model
 {
-    protected $table = 'community_group_detail';
+    protected $table = 'commander_withdraw_record';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

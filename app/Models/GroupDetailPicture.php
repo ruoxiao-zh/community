@@ -6,13 +6,13 @@
  * Time: 3:01 PM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class CommunityGroupDetailPicture extends Model
+class GroupDetailPicture extends Model
 {
-    protected $table = 'community_group_detail_picture';
+    protected $table = 'group_detail_picture';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];

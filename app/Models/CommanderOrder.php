@@ -2,24 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: ellison
- * Date: 30/03/2018
- * Time: 11:07 AM
+ * Date: 2018/4/2
+ * Time: 11:58 AM
  */
 
-namespace App\Http\Controllers\Community\Tables;
+namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 社区团购支付配置
+ * 社区团购团长提成订单
  *
- * Class CommunityPayConfig
+ * Class CommanderOrder
  *
  * @package App\Http\Controllers\Community\Tables
  */
-class CommunityPayConfig extends Model
+class CommanderOrder extends Model
 {
-    protected $table = 'community_pay';
+    protected $table = 'commander_order';
     protected $primaryKey = 'id';
     public $timestamps = false;
     protected $guarded = [];
