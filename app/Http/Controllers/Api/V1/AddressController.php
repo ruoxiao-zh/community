@@ -9,7 +9,7 @@
 namespace App\Http\Controllers\Community;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Community\Tables\CommunityUserAddress;
+use App\Models\UserAddress;
 
 class AddressController extends BaseController
 {
@@ -71,7 +71,7 @@ class AddressController extends BaseController
             return jsonHelper(110, '必要的参数不能为空: detail');
         }
 
-        $result = CommunityUserAddress::where([
+        $result = UserAddress::where([
             'community_small_id' => $this->smallid,
             'openid'             => $openid,
             'username'           => $username,
@@ -86,7 +86,7 @@ class AddressController extends BaseController
         if ($result) {
             return jsonHelper(0, '操作成功');
         } else {
-            CommunityUserAddress::create([
+            UserAddress::create([
                 'community_small_id' => $this->smallid,
                 'openid'             => $openid,
                 'username'           => $username,
@@ -121,7 +121,7 @@ class AddressController extends BaseController
             return jsonHelper(102, '必要的参数不能为空: openid');
         }
 
-        $result = CommunityUserAddress::where('community_small_id', $this->smallid)->where('openid', $openid)->select('id', 'openid', 'username', 'phone', 'province', 'city', 'area', 'housing_estate', 'detail', 'create_at')->orderBy('create_at', 'desc')->get();
+        $result = UserAddress::where('community_small_id', $this->smallid)->where('openid', $openid)->select('id', 'openid', 'username', 'phone', 'province', 'city', 'area', 'housing_estate', 'detail', 'create_at')->orderBy('create_at', 'desc')->get();
 
         return jsonHelper(0, '获取成功', $result);
     }
@@ -145,7 +145,7 @@ class AddressController extends BaseController
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityUserAddress::find($id);
+        $obj = UserAddress::find($id);
         if ( !$obj) {
             return jsonHelper(102, '参数异常: id');
         }
