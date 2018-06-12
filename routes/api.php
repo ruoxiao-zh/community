@@ -19,7 +19,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 
 // 社区团购
-Route::group(['namespace' => 'Community', 'prefix' => 'community'], function () {
+Route::middleware('auth:api')->namespace('Api/V1')->prefix('v1')->group(function () {
     // 公司管理
     Route::get('company', 'CompanyController@index');
     Route::post('company-upload-img', 'CompanyController@uploadImg');
