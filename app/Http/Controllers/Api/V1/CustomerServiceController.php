@@ -8,16 +8,17 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\Tables\CommunityUser;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
 use App\Common\CurlHelper;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityCustomerService;
+use App\Models\PayConfig;
+use App\Models\User;
+use App\Models\CustomerService;
 
-class CustomerServiceController extends BaseController
+class CustomerServiceController extends Controller
 {
     /**
      * 验证消息的确来自微信服务器
@@ -70,14 +71,10 @@ class CustomerServiceController extends BaseController
         // 发送消息用户
         $from_user_name_arr = json_decode($GLOBALS["HTTP_RAW_POST_DATA"], true);
         $from_user_name = $from_user_name_arr['FromUserName'];
-        $community_small_id = CommunityUser::where('openid', $from_user_name)->first();
-        if ($community_small_id) {
-            $community_small_id = $community_small_id->community_small_id;
-        }
 
         // 用户信息
-        $customer_service = CommunityCustomerService::where('community_small_id', $community_small_id)->orderBy(\DB::raw('RAND()'))->take(1)->get();
-        $small_user_info = CommunityPayConfig::where('community_small_id', $community_small_id)->first();
+        $customer_service = CustomerService::orderBy(\DB::raw('RAND()'))->take(1)->get();
+        $small_user_info = PayConfig::first();
         if ($small_user_info) {
             $access_token = $this->getAccessToken($small_user_info);
         } else {
@@ -103,7 +100,6 @@ class CustomerServiceController extends BaseController
             $api = 'https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=' . $access_token;
             $curl = new CurlHelper();
             $result = $curl->postCurl($api, json_encode($message, JSON_UNESCAPED_UNICODE));
-            file_put_contents('/data/wwwroot/default/ailetutourism/app/Http/Controllers/Community/c.txt', $from_user_name);
 
             return $result;
         }
@@ -136,11 +132,11 @@ class CustomerServiceController extends BaseController
     {
         $customer_service_id = $request->input('customer_service');
         if ($customer_service_id) {
-            $customer_service_info = CommunityCustomerService::find($customer_service_id);
+            $customer_service_info = CustomerService::find($customer_service_id);
             if ($customer_service_info) {
-                return view('community.qrcode', compact('customer_service_info'));
+                return view('service.qrcode', compact('customer_service_info'));
             }
-            return view('community.noqrcode');
+            return view('service.noqrcode');
         }
     }
 
@@ -152,12 +148,7 @@ class CustomerServiceController extends BaseController
      */
     public function show(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityCustomerService::where('community_small_id', $this->smallid)->select('id', 'nickname', 'qrcode', 'create_at')->get();
+        $obj = CustomerService::select('id', 'nickname', 'qrcode', 'create_at')->get();
 
         return jsonHelper(0, '获取成功', $obj);
     }
@@ -170,17 +161,12 @@ class CustomerServiceController extends BaseController
      */
     public function detail(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityCustomerService::where('community_small_id', $this->smallid)->where('id', $id)->select('id', 'nickname', 'qrcode', 'create_at')->first();
+        $obj = CustomerService::where('id', $id)->select('id', 'nickname', 'qrcode', 'create_at')->first();
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -196,22 +182,13 @@ class CustomerServiceController extends BaseController
      */
     public function createOrUpdate(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $customer_service_id = $request->input('customer_service_id');
 
         $logo = SaveImage::getSaveImageUrl('images/community/qrcode', 'qrcode', '', false);
         if ($customer_service_id) {
-            $obj = CommunityCustomerService::find($customer_service_id);
+            $obj = CustomerService::find($customer_service_id);
             if ( !$obj) {
                 return jsonHelper(106, '传入的 customer_service_id 不存在');
-            }
-
-            if ($obj->community_small_id != $this->smallid) {
-                return jsonHelper(105, '权限不足，不能修改');
             }
 
             if ($logo) {
@@ -221,8 +198,7 @@ class CustomerServiceController extends BaseController
                 $obj->qrcode = $logo;
             }
         } else {
-            $obj = new CommunityCustomerService();
-            $obj->community_small_id = $this->smallid;
+            $obj = new CustomerService();
             if ( !$logo) {
                 return jsonHelper(102, '必要的参数不能为空: qrcode');
             }
@@ -253,23 +229,14 @@ class CustomerServiceController extends BaseController
      */
     public function destroy(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if (!$id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityCustomerService::find($id);
+        $obj = CustomerService::find($id);
         if ( !$obj) {
             return jsonHelper(103, '客服信息不存在');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足，不能删除');
         }
 
         $obj->delete();

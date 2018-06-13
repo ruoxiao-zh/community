@@ -11,11 +11,12 @@ namespace App\Http\Controllers\Community;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\WxUploadHandler;
+use App\Models\PayConfig;
+use App\Http\Controllers\Api\V1\WxUploadHandler;
 
-class PayConfigController extends BaseController
+class PayConfigController extends Controller
 {
     /**
      * 获取信息
@@ -25,12 +26,7 @@ class PayConfigController extends BaseController
      */
     public function index(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityPayConfig::where('community_small_id', $this->smallid)->select('id', 'pay_name', 'appid', 'appsecret', 'mch_id', 'key', 'apiclient_cert', 'apiclient_key', 'payment_agreement')->get();
+        $obj = PayConfig::select('id', 'pay_name', 'appid', 'appsecret', 'mch_id', 'key', 'apiclient_cert', 'apiclient_key', 'payment_agreement')->get();
 
         return jsonHelper(0, '获取成功', $obj);
     }
@@ -43,16 +39,9 @@ class PayConfigController extends BaseController
      */
     public function createOrUpdate(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $obj = PayConfig::first();
         if ( !$obj) {
-            $obj = new CommunityPayConfig();
-            // 微信小程序用户 id
-            $obj->community_small_id = $this->smallid;
+            $obj = new PayConfig();
         }
 
         // 收款方姓名
@@ -127,15 +116,10 @@ class PayConfigController extends BaseController
      */
     public function payCertUpload(Request $request, WxUploadHandler $upload)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 私钥文件
         $apiclient_cert = $request->file('apiclient_cert');
         if ($apiclient_cert) {
-            $path = $upload->save($request->file('apiclient_cert'), 'cert', $this->smallid);
+            $path = $upload->save($request->file('apiclient_cert'), 'cert', time());
             if ($path) {
                 return jsonHelper(0, '获取成功', $path);
             }
@@ -153,15 +137,10 @@ class PayConfigController extends BaseController
      */
     public function payKeyUpload(Request $request, WxUploadHandler $upload)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 公钥文件
         $apiclient_key = $request->file('apiclient_key');
         if ($apiclient_key) {
-            $path = $upload->save($request->file('apiclient_key'), 'key', $this->smallid);
+            $path = $upload->save($request->file('apiclient_key'), 'key', time());
             if ($path) {
                 return jsonHelper(0, '获取成功', $path);
             }
@@ -178,18 +157,9 @@ class PayConfigController extends BaseController
      */
     public function destroy(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $obj = PayConfig::first();
         if ( !$obj) {
             return jsonHelper(103, '暂无任何支付配置信息');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足，不能删除');
         }
 
         $obj->delete();

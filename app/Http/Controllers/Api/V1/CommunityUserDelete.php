@@ -8,24 +8,23 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCheckCodeManager;
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityCommanderOrder;
-use App\Http\Controllers\Community\Tables\CommunityCommanderWithdrawRecord;
-use App\Http\Controllers\Community\Tables\CommunityCompany;
-use App\Http\Controllers\Community\Tables\CommunityCustomerService;
-use App\Http\Controllers\Community\Tables\CommunityDelivery;
-use App\Http\Controllers\Community\Tables\CommunityGroup;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetailPicture;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupUserClick;
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\Tables\CommunityUser;
-use App\Http\Controllers\Community\Tables\CommunityUserAddress;
-use App\Http\Controllers\Community\Tables\CommunityUserRecommend;
-use App\Table2\Factor\SmallUser;
+use App\Models\CheckCodeManager;
+use App\Models\Commander;
+use App\Models\CommanderOrder;
+use App\Models\CommanderWithdrawRecord;
+use App\Models\Company;
+use App\Models\CustomerService;
+use App\Models\Delivery;
+use App\Models\Group;
+use App\Models\GroupDetail;
+use App\Models\GroupDetailPicture;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\GroupUserClick;
+use App\Models\PayConfig;
+use App\Models\User;
+use App\Models\UserAddress;
+use App\Http\Controllers\Community\UserRecommend;
 
 class CommunityUserDelete
 {

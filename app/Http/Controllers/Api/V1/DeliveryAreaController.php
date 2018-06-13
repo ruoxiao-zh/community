@@ -8,36 +8,27 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityDeliveryArea;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Models\DeliveryArea;
 
-class DeliveryAreaController extends BaseController
+class DeliveryAreaController extends Controller
 {
     public function index(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityDeliveryArea::where('community_small_id', $this->smallid)->where('is_delete', 0)->select('id', 'delivery_area', 'phone', 'address', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/goods');
+        $obj = DeliveryArea::where('is_delete', 0)->select('id', 'delivery_area', 'phone', 'address', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/goods');
 
         return $obj->toJson();
     }
 
     public function show(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityDeliveryArea::find($id);
+        $obj = DeliveryArea::find($id);
         if ( !$obj) {
             return jsonHelper(102, '传入的id不存在');
         }
@@ -47,23 +38,17 @@ class DeliveryAreaController extends BaseController
 
     public function store(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $delivery_area = $request->input('delivery_area');
         if ( !$delivery_area) {
             return jsonHelper(102, '必要的参数不能为空: delivery_area');
         } else {
-            $is_insert = CommunityDeliveryArea::where('is_delete', 0)->where('delivery_area', $delivery_area)->first();
+            $is_insert = DeliveryArea::where('is_delete', 0)->where('delivery_area', $delivery_area)->first();
             if ($is_insert) {
                 return jsonHelper(103, '配送点已添加, 请勿重复添加');
             }
         }
-        $obj = new CommunityDeliveryArea();
+        $obj = new DeliveryArea();
         $obj->delivery_area = $delivery_area;
-        $obj->community_small_id = $this->smallid;
 
         $phone = $request->input('phone');
         if ( !$phone) {
@@ -91,17 +76,12 @@ class DeliveryAreaController extends BaseController
 
     public function update(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = $request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityDeliveryArea::find($id);
+        $obj = DeliveryArea::find($id);
         if ( !$obj) {
             return jsonHelper(102, '传入的id不存在');
         }
@@ -111,7 +91,6 @@ class DeliveryAreaController extends BaseController
             return jsonHelper(102, '必要的参数不能为空: delivery_area');
         }
         $obj->delivery_area = $delivery_area;
-        $obj->community_small_id = $this->smallid;
 
         $phone = $request->input('phone');
         if ( !$phone) {
@@ -139,23 +118,14 @@ class DeliveryAreaController extends BaseController
 
     public function destroy(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = $request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityDeliveryArea::find($id);
+        $obj = DeliveryArea::find($id);
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足，不能删除');
         }
 
         $obj->update([

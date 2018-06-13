@@ -8,24 +8,25 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCommanderWithdrawRecord;
-use App\Http\Controllers\Community\Tables\CommunityDelivery;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityUser;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityCommanderOrder;
+use App\Models\CommanderWithdrawRecord;
+use App\Models\Delivery;
+use App\Models\GroupDetail;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\User;
+use App\Models\Commander;
+use App\Models\CommanderOrder;
 
 // Excel 数据操作
 
-require_once __DIR__ . '/../GroupPurchase/Excel/PHPExcel.php';
+require_once __DIR__ . '/../../../../SDK/Excel/PHPExcel.php';
 
-class CommanderController extends BaseController
+class CommanderController extends Controller
 {
     /**
      * 检索用户
@@ -36,18 +37,12 @@ class CommanderController extends BaseController
      */
     public function searchUser(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $nickname = $request->input('nickname');
         if ( !$nickname) {
             return jsonHelper(102, '必要的参数不能为空: nickname');
         }
 
-        $result = CommunityUser::where('community_small_id', $this->smallid)->where('nickname', 'like',
-            $nickname . '%')->select('id', 'openid', 'nickname', 'avatar', 'create_at')->get();
+        $result = User::where('nickname', 'like', $nickname . '%')->select('id', 'openid', 'nickname', 'avatar', 'create_at')->get();
 
         return jsonHelper(0, '获取成功', $result);
     }
@@ -61,11 +56,6 @@ class CommanderController extends BaseController
      */
     public function create(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 配送区域
         $delivery_id = (int)$request->input('delivery_id');
         if ( !$delivery_id) {
@@ -94,32 +84,19 @@ class CommanderController extends BaseController
             return jsonHelper(103, '必要的参数不能为空: name');
         }
 
-        // 提成率
-//        $royalty_rate = (int)$request->input('royalty_rate');
-//        if ( !$royalty_rate) {
-//            return jsonHelper(107, '必要的参数不能为空: royalty_rate');
-//        } else if ($royalty_rate <= 0 || $royalty_rate > 100) {
-//            return jsonHelper(108, '提成率必须为 0 ~ 100 的整数');
-//        }
-
-        $is_delete = CommunityCommander::where('community_small_id', $this->smallid)->where('openid',
-            $openid)->where('is_delete', 0)->first();
+        $is_delete = Commander::where('openid', $openid)->where('is_delete', 0)->first();
         if ($is_delete) {
             $obj = $is_delete;
         } else {
-            $obj = new CommunityCommander();
-            $obj->community_small_id = $this->smallid;
+            $obj = new Commander();
         }
 
         $obj->delivery_id = $delivery_id;
         $obj->name = $name;
         $obj->phone = $phone;
         $obj->openid = $openid;
-//        $obj->royalty_rate = $royalty_rate;
 
-        // $is_insert = Commander::where('community_small_id', $this->smallid)->where('delivery_id', $delivery_id)->where('openid', $openid)->first();
-        $is_insert = CommunityCommander::where('community_small_id', $this->smallid)->where('openid',
-            $openid)->where('is_delete', 0)->first();
+        $is_insert = Commander::where('openid', $openid)->where('is_delete', 0)->first();
         if ($is_insert) {
             return jsonHelper(109, '数据已添加, 请勿重复添加');
         }
@@ -142,21 +119,13 @@ class CommanderController extends BaseController
      */
     public function update(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
-        $obj = CommunityCommander::find($id);
+        $obj = Commander::find($id);
         if ( !$obj) {
             return jsonHelper(102, '传入的参数异常');
-        }
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(103, '权限不足, 无法修改');
         }
 
         // 配送区域
@@ -191,15 +160,6 @@ class CommanderController extends BaseController
         }
         $obj->openid = $openid;
 
-        // 提成率
-//        $royalty_rate = (int)$request->input('royalty_rate');
-//        if ( !$royalty_rate) {
-//            return jsonHelper(109, '必要的参数不能为空: royalty_rate');
-//        } else if ($royalty_rate <= 0 || $royalty_rate > 100) {
-//            return jsonHelper(110, '提成率必须为 0 ~ 100 的整数');
-//        }
-//        $obj->royalty_rate = $royalty_rate;
-
         try {
             $obj->save();
 
@@ -218,24 +178,16 @@ class CommanderController extends BaseController
      */
     public function index(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $result = CommunityCommander::where('community_small_id', $this->smallid)->where('is_delete', 0)->select('id',
-            'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money',
-            'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander');
+        $result = Commander::where('is_delete', 0)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander');
 
         if ($result) {
             foreach ($result as $key => $value) {
-                $delivery_area = CommunityDelivery::where('id', $value->delivery_id)->first();
+                $delivery_area = Delivery::where('id', $value->delivery_id)->first();
                 if ($delivery_area) {
                     $result[$key]['delivery_area'] = $delivery_area->deliver_name;
                 }
 
-                $userinfo = CommunityUser::where('community_small_id', $this->smallid)->where('openid',
-                    $value->openid)->first();
+                $userinfo = User::where('openid', $value->openid)->first();
                 if ($userinfo) {
                     $result[$key]['user_nickname'] = $userinfo->nickname;
                 }
@@ -264,18 +216,16 @@ class CommanderController extends BaseController
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $result = CommunityCommander::where('id', $id)->select('id', 'name', 'phone', 'openid', 'delivery_id',
-            'total_money', 'withdraw_money', 'residue_money', 'create_at')->first();
+        $result = Commander::where('id', $id)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')->first();
         if ( !$result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
 
-        $delivery_area = CommunityDelivery::where('id', $result->delivery_id)->first();
+        $delivery_area = Delivery::where('id', $result->delivery_id)->first();
         if ($delivery_area) {
             $result['delivery_area'] = $delivery_area->deliver_name;
         }
-        $userinfo = CommunityUser::where('community_small_id', $this->smallid)->where('openid',
-            $result->openid)->first();
+        $userinfo = User::where('openid', $result->openid)->first();
         if ($userinfo) {
             $result['user_nickname'] = $userinfo->nickname;
         }
@@ -292,23 +242,14 @@ class CommanderController extends BaseController
      */
     public function delete(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $result = CommunityCommander::find($id);
+        $result = Commander::find($id);
         if ( !$result) {
             return jsonHelper(103, '传入的参数异常: id');
-        }
-
-        if ($result->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足, 无法删除');
         }
 
         $result->update([
@@ -327,27 +268,20 @@ class CommanderController extends BaseController
      */
     public function search(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $result = CommunityCommander::where('community_small_id', $this->smallid)->where('is_delete',
-            0)->where(function ($query) use ($request) {
+        $result = Commander::where('is_delete', 0)->where(function ($query) use ($request) {
             ($request->input('name') !== '') && $query->where('name', 'like', $request->input('name') . '%');
             ($request->input('delivery_id') !== '') && $query->where('delivery_id', $request->input('delivery_id'));
-        })->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money',
-            'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/search');
+        })->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')
+            ->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/search');
 
         if ($result) {
             foreach ($result as $key => $value) {
-                $delivery_area = CommunityDelivery::where('id', $value->delivery_id)->first();
+                $delivery_area = Delivery::where('id', $value->delivery_id)->first();
                 if ($delivery_area) {
                     $result[$key]['delivery_area'] = $delivery_area->deliver_name;
                 }
 
-                $userinfo = CommunityUser::where('community_small_id', $this->smallid)->where('openid',
-                    $value->openid)->first();
+                $userinfo = User::where('openid', $value->openid)->first();
                 if ($userinfo) {
                     $result[$key]['user_nickname'] = $userinfo->nickname;
                 }
@@ -371,22 +305,19 @@ class CommanderController extends BaseController
             return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
         }
 
-        $obj = new CommunityCommander();
-        $obj->community_small_id = $this->smallid;
+        $obj = new Commander();
 
         // 配送区域
         $delivery = $request->input('delivery');
         if ( !$delivery) {
             return jsonHelper(102, '必要的参数不能为空: delivery');
         } else {
-            $delivery_id = CommunityDelivery::where('community_small_id', $this->smallid)->where('deliver_name', 'like',
-                '%' . $delivery . '%')->first();
+            $delivery_id = Delivery::where('deliver_name', 'like', '%' . $delivery . '%')->first();
             if ($delivery_id) {
                 $delivery_id = $delivery_id->id;
             } else {
                 $delivery_id = DB::table('community_deliver')->insertGetId([
-                    'deliver_name'       => $delivery,
-                    'community_small_id' => $this->smallid
+                    'deliver_name' => $delivery
                 ]);
             }
         }
@@ -419,7 +350,7 @@ class CommanderController extends BaseController
 
         $obj->is_apply = 1;
 
-        $is_insert = CommunityCommander::where('community_small_id', $this->smallid)->where('openid', $openid)->first();
+        $is_insert = Commander::where('openid', $openid)->first();
         if ($is_insert) {
             return jsonHelper(109, '数据已添加, 请勿重复添加');
         }
@@ -442,23 +373,16 @@ class CommanderController extends BaseController
      */
     public function applyForList(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $result = CommunityCommander::where('community_small_id', $this->smallid)->where('is_apply', 1)->select('id',
-            'name', 'phone', 'openid', 'delivery_id',
-            'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/apply-for');
+        $result = Commander::where('is_apply', 1)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/apply-for');
 
         if ($result) {
             foreach ($result as $key => $value) {
-                $delivery_area = CommunityDelivery::where('id', $value->delivery_id)->first();
+                $delivery_area = Delivery::where('id', $value->delivery_id)->first();
                 if ($delivery_area) {
                     $result[$key]['delivery_area'] = $delivery_area->deliver_name;
                 }
 
-                $userinfo = CommunityUser::where('community_small_id', $this->smallid)->where('openid',
+                $userinfo = User::where('community_small_id', $this->smallid)->where('openid',
                     $value->openid)->first();
                 if ($userinfo) {
                     $result[$key]['user_nickname'] = $userinfo->nickname;
@@ -478,29 +402,15 @@ class CommanderController extends BaseController
      */
     public function applyForConfirm(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityCommander::find($id);
+        $obj = Commander::find($id);
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
         }
-
-        // 提成率
-//        $royalty_rate = (int)$request->input('royalty_rate');
-//        if ( !$royalty_rate) {
-//            return jsonHelper(104, '必要的参数不能为空: royalty_rate');
-//        } else if ($royalty_rate <= 0 || $royalty_rate > 100) {
-//            return jsonHelper(105, '提成率必须为 0 ~ 100 的整数');
-//        }
-//        $obj->royalty_rate = $royalty_rate;
 
         $obj->is_apply = 0;
 
@@ -522,14 +432,9 @@ class CommanderController extends BaseController
      */
     public function countMoney(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $total_money = CommunityCommander::where('community_small_id', $this->smallid)->sum('total_money');
-        $withdraw_money = CommunityCommander::where('community_small_id', $this->smallid)->sum('withdraw_money');
-        $residue_money = CommunityCommander::where('community_small_id', $this->smallid)->sum('residue_money');
+        $total_money = Commander::sum('total_money');
+        $withdraw_money = Commander::sum('withdraw_money');
+        $residue_money = Commander::sum('residue_money');
 
         $data = [
             'total_money'    => $total_money,
@@ -549,11 +454,6 @@ class CommanderController extends BaseController
      */
     public function withdraw(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $commander_id = (int)$request->input('commander_id');
         if ( !$commander_id) {
             return jsonHelper(102, '必要的参数不能为空: commander_id');
@@ -564,7 +464,7 @@ class CommanderController extends BaseController
             return jsonHelper(103, '必要的参数不能为空: money');
         }
 
-        $obj = CommunityCommander::find($commander_id);
+        $obj = Commander::find($commander_id);
         if ( !$obj) {
             return jsonHelper(104, '传入的参数异常: commander_id');
         } else {
@@ -574,12 +474,11 @@ class CommanderController extends BaseController
         }
 
         $obj->update([
-            // 'withdraw_money' => ($obj->withdraw_money) - $money,
             'residue_money' => ($obj->residue_money) - $money
         ]);
 
         // 将提现记录写入数据库
-        CommunityCommanderWithdrawRecord::create([
+        CommanderWithdrawRecord::create([
             'commander_id'       => $commander_id,
             // 总提成
             'total_money'        => $obj->withdraw_money,
@@ -587,7 +486,6 @@ class CommanderController extends BaseController
             'withdraw_money'     => $money,
             // 剩余提成
             'residue_money'      => ($obj->residue_money) - $money,
-            'community_small_id' => $this->smallid,
         ]);
 
         return jsonHelper(0, '操作成功');
@@ -602,23 +500,16 @@ class CommanderController extends BaseController
      */
     public function commanderOrderExportToExcel(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $result = CommunityCommander::where('community_small_id', $this->smallid)->select('id', 'name', 'phone',
-            'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money')->get();
+        $result = Commander::select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money')->get();
 
         if ($result) {
             foreach ($result as $key => $value) {
-                $delivery_area = CommunityDelivery::where('id', $value->delivery_id)->first();
+                $delivery_area = Delivery::where('id', $value->delivery_id)->first();
                 if ($delivery_area) {
                     $result[$key]['delivery_area'] = $delivery_area->deliver_name;
                 }
 
-                $userinfo = CommunityUser::where('community_small_id', $this->smallid)->where('openid',
-                    $value->openid)->first();
+                $userinfo = User::where('openid', $value->openid)->first();
                 if ($userinfo) {
                     $result[$key]['user_nickname'] = $userinfo->nickname;
                 }
@@ -710,18 +601,12 @@ class CommanderController extends BaseController
      */
     public function getCommanderId(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $openid = $request->input('openid');
         if ( !$openid) {
             return jsonHelper(102, '必要的参数不能为空: openid');
         }
 
-        $commander = CommunityCommander::where('community_small_id', $this->smallid)->where('openid',
-            $openid)->where('is_delete', 0)->first();
+        $commander = Commander::where('openid', $openid)->where('is_delete', 0)->first();
         if ($commander) {
             $data = [
                 'commander_id' => $commander->id,
@@ -742,23 +627,16 @@ class CommanderController extends BaseController
      */
     public function commanderBalance(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // openid
         $openid = $request->input('openid');
         if ( !$openid) {
             return jsonHelper(102, '必要的参数不能为空: openid');
         }
 
-        $commander = CommunityCommander::where('community_small_id', $this->smallid)->where('openid',
-            $openid)->where('is_delete', 0)->first();
+        $commander = Commander::where('openid', $openid)->where('is_delete', 0)->first();
         if ($commander) {
             $data = [
                 'is_commander'   => 1,
-//                'royalty_rate'   => $commander->royalty_rate,
                 'total_money'    => $commander->total_money,
                 'withdraw_money' => $commander->withdraw_money,
                 'residue_money'  => $commander->residue_money
@@ -772,27 +650,6 @@ class CommanderController extends BaseController
         return jsonHelper(0, '获取成功', $data);
     }
 
-//    public function commanderOrderTest(Request $request)
-//    {
-//        // 检查小程序用户权限
-//        if ( !$this->getSmallid($request)) {
-//            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-//        }
-//
-//        $order_goods_id = GroupOrderDetail::where('order_id', 228)->get();
-//        $commander_money = 0;
-//        if ($order_goods_id) {
-//            foreach ($order_goods_id as $key => $value) {
-//                $goods_id = $value->goods_id;
-//                $single_goods_royalty_rate = GroupDetail::where('id', $goods_id)->first();
-//                $single_order_goods_withdraw = ($value->goods_sum) * ($single_goods_royalty_rate->royalty_rate) / 100;
-//                $commander_money += $single_order_goods_withdraw;
-//            }
-//        }
-//
-//        dd($commander_money);
-//    }
-
     /**
      * 团长配送小区
      *
@@ -802,20 +659,15 @@ class CommanderController extends BaseController
      */
     public function area(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // openid
         $commander_id = (int)$request->input('commander_id');
         if ( !$commander_id) {
             return jsonHelper(102, '必要的参数不能为空: commander_id');
         }
 
-        $delivery = CommunityCommander::find($commander_id);
+        $delivery = Commander::find($commander_id);
         if ($delivery) {
-            $delivery_name = CommunityDelivery::where('id', $delivery->delivery_id)->select('deliver_name')->first();
+            $delivery_name = Delivery::where('id', $delivery->delivery_id)->select('deliver_name')->first();
             if ($delivery_name) {
                 return jsonHelper(0, '获取成功', $delivery_name);
             }

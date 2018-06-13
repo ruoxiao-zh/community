@@ -8,13 +8,12 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityCommanderOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\NewsController;
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
+use App\Models\Commander;
+use App\Models\CommanderOrder;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\GroupDetail;
+use App\Models\PayConfig;
 
 class UserWxCallBackNotify extends \WxPayNotify
 {
@@ -25,6 +24,7 @@ class UserWxCallBackNotify extends \WxPayNotify
      * @param string $msg
      *
      * @return bool|\true回调出来完成不需要继续回调，false回调处理未完成需要继续回调
+     * @throws \Exception
      */
     public function NotifyProcess($data, &$msg)
     {
@@ -37,26 +37,26 @@ class UserWxCallBackNotify extends \WxPayNotify
             \DB::beginTransaction();
             try {
                 // 1. 更新微信支付订单编号
-                CommunityGroupOrder::where([
+                GroupOrder::where([
                     'order_number' => $orderNo
                 ])->update([
                     'transaction_id' => $transaction_id
                 ]);
 
                 // 2. 更新订单状态
-                CommunityGroupOrder::where([
+                GroupOrder::where([
                     'order_number' => $orderNo
                 ])->update([
                     'order_status' => 1
                 ]);
 
                 // 3. 削减库存
-                $order_info = CommunityGroupOrder::where('order_number', $orderNo)->first();
+                $order_info = GroupOrder::where('order_number', $orderNo)->first();
                 $order_id = $order_info->id;
-                $order_goods = CommunityGroupOrderDetail::where('order_id', $order_id)->get();
+                $order_goods = GroupOrderDetail::where('order_id', $order_id)->get();
                 foreach ($order_goods as $key => $value) {
-                    $group_goods = CommunityGroupDetail::where('id', $value->goods_id)->first();
-                    CommunityGroupDetail::where('id', $value->goods_id)->update([
+                    $group_goods = GroupDetail::where('id', $value->goods_id)->first();
+                    GroupDetail::where('id', $value->goods_id)->update([
                         'goods_num' => ($group_goods->goods_num) - ($value->goods_num)
                     ]);
                 }
@@ -66,29 +66,28 @@ class UserWxCallBackNotify extends \WxPayNotify
                     // 团长 ID
                     $commander_id = $order_info->belongs_commander;
                     // 团长详情
-                    $commander_info = CommunityCommander::find($commander_id);
+                    $commander_info = Commander::find($commander_id);
 
                     // 计算团长提成
-                    $order_goods_id = CommunityGroupOrderDetail::where('order_id', $order_id)->get();
+                    $order_goods_id = GroupOrderDetail::where('order_id', $order_id)->get();
                     $commander_money = 0;
                     if ($order_goods_id) {
                         foreach ($order_goods_id as $key => $value) {
                             $goods_id = $value->goods_id;
-                            $single_goods_royalty_rate = CommunityGroupDetail::where('id', $goods_id)->first();
+                            $single_goods_royalty_rate = GroupDetail::where('id', $goods_id)->first();
                             $single_order_goods_withdraw = ($value->goods_sum) * ($single_goods_royalty_rate->royalty_rate) / 100;
                             $commander_money += $single_order_goods_withdraw;
                         }
                     }
 
                     // 写入团长订单数据
-                    CommunityCommanderOrder::create([
+                    CommanderOrder::create([
                         'order_id'           => $order_id,
                         'royalty_money'      => $commander_money,
-                        'community_small_id' => $order_info->community_small_id
                     ]);
 
                     // 更新团长订单总销售额, 订单总提成, 团长提成剩余金额
-                    CommunityCommander::where('id', $commander_id)->update([
+                    Commander::where('id', $commander_id)->update([
                         // 团长订单总销售额
                         'total_money'    => ($commander_info->total_money) + ($order_info->total_money),
                         // 团长总提成

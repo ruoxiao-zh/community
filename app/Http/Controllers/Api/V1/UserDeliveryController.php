@@ -8,19 +8,16 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityDeliveryArea;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Community\Tables\CommunityUserDelivery;
+use App\Http\Controllers\Controller;
+// 数据库模型
+use App\Models\DeliveryArea;
+use App\Models\UserDelivery;
 
-class UserDeliveryController extends BaseController
+class UserDeliveryController extends Controller
 {
     public function addUserDelivery(Request $request)
     {
-        // 判断用户是否登录失败
-        if (!$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         // 微信用户的 openid
         $openid = $request->input('openid');
         if (!$openid) {
@@ -44,10 +41,9 @@ class UserDeliveryController extends BaseController
             return jsonHelper(106, '手机号格式不正确');
         }
 
-        $result = CommunityUserDelivery::where([
+        $result = UserDelivery::where([
             'openid' => $openid,
             'delivery_id' => $delivery_area_id,
-            'community_small_id' => $this->smallid,
             'username' => $username,
             'phone' => $phone,
         ])->first();
@@ -55,10 +51,9 @@ class UserDeliveryController extends BaseController
         if ($result) {
             return jsonHelper(0, '添加成功');
         } else {
-            CommunityUserDelivery::create([
+            UserDelivery::create([
                 'openid' => $openid,
                 'delivery_id' => $delivery_area_id,
-                'community_small_id' => $this->smallid,
                 'username' => $username,
                 'phone' => $phone,
             ]);
@@ -69,22 +64,17 @@ class UserDeliveryController extends BaseController
 
     public function userDeliveryList(Request $request)
     {
-        // 判断用户是否登录失败
-        if (!$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         // 微信用户的 openid
         $openid = $request->input('openid');
         if (!$openid) {
             return jsonHelper(102, '必要的参数不能为空: openid');
         }
 
-        $result = CommunityUserDelivery::where('community_small_id', $this->smallid)->where('openid', $openid)->select('id', 'openid', 'delivery_id', 'username', 'phone', 'create_at')->orderBy('create_at', 'desc')->get();
+        $result = UserDelivery::where('openid', $openid)->select('id', 'openid', 'delivery_id', 'username', 'phone', 'create_at')->orderBy('create_at', 'desc')->get();
         if ($result) {
             $result = $result->toArray();
             foreach ($result as $key => $value) {
-                $delivery_area = CommunityDeliveryArea::find($value['delivery_id']);
+                $delivery_area = DeliveryArea::find($value['delivery_id']);
 
                 $result[$key]['delivery_area'] = $delivery_area->delivery_area;
                 $result[$key]['delivery_phone'] = $delivery_area->phone;
@@ -97,23 +87,14 @@ class UserDeliveryController extends BaseController
 
     public function userDeliveryDel(Request $request)
     {
-        // 判断用户是否登录失败
-        if (!$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         $id = (int)$request->input('id');
         if (!$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityUserDelivery::find($id);
+        $obj = UserDelivery::find($id);
         if (!$obj) {
             return jsonHelper(102, '参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(103, '权限不足,无法删除');
         }
 
         $obj->delete();

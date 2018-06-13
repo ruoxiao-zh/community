@@ -8,33 +8,32 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupUserClick;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityUser;
-use App\Http\Controllers\Community\Tables\CommunityGroup;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetailPicture;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\GroupUserClick;
+use App\Models\User;
+use App\Models\Group;
+use App\Models\GroupDetail;
+use App\Models\GroupDetailPicture;
 
-class IndexController extends BaseController
+
+class IndexController extends Controller
 {
     /**
      * 更新或存储微信用户信息
      * 更新用户信息, 业务需要微信用户的头像和昵称信息, 所以需要把这些信息存储下来
      *
      * @param Request $request
+     *
      * @return string
      */
     public function user(Request $request)
     {
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 微信用户的openid
         $openid = $request->input('openid');
         if ( !$openid) {
@@ -53,9 +52,8 @@ class IndexController extends BaseController
             return jsonHelper(106, '必要的参数不能为空: avatar');
         }
 
-        $obj = CommunityUser::where([
-            'community_small_id' => $this->smallid,
-            'openid'             => $openid
+        $obj = User::where([
+            'openid' => $openid
         ])->first();
 
         if ($obj) {
@@ -64,11 +62,10 @@ class IndexController extends BaseController
                 $obj->avatar = $avatar;
             }
         } else {
-            $obj = new CommunityUser();
+            $obj = new User();
             $obj->nickname = $nickname;
             $obj->avatar = $avatar;
             $obj->openid = $openid;
-            $obj->community_small_id = $this->smallid;
         }
 
         try {
@@ -84,15 +81,12 @@ class IndexController extends BaseController
      * 即将开始(最多取了6条数据)
      *
      * @param Request $request
+     *
      * @return string
      */
     public function startSoon(Request $request)
     {
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->limit(6)->get();
+        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->limit(6)->get();
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -107,15 +101,12 @@ class IndexController extends BaseController
      * 所有未开始的商品
      *
      * @param Request $request
+     *
      * @return string
      */
     public function startSoonAll(Request $request)
     {
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/shopping/srart-soon/all');
+        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/shopping/srart-soon/all');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -130,15 +121,12 @@ class IndexController extends BaseController
      * 正在进行的团购
      *
      * @param Request $request
+     *
      * @return string
      */
     public function onSell(Request $request)
     {
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '<', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'click_num', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/onsell');
+        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '<', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'click_num', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/onsell');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -157,11 +145,11 @@ class IndexController extends BaseController
     private function searchGoodsInfo($group_result)
     {
         foreach ($group_result as $key => $value) {
-            $goods_info = CommunityGroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+            $goods_info = GroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
             if ($goods_info) {
                 foreach ($goods_info as $k => $v) {
                     // 商品图片
-                    $goods_img = CommunityGroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
+                    $goods_img = GroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
                     if ($goods_img) {
                         $goods_img = $goods_img->toArray();
                     }
@@ -183,15 +171,15 @@ class IndexController extends BaseController
     private function onsellSearchGoodsInfo($group_result)
     {
         foreach ($group_result as $key => $value) {
-            $goods_info = CommunityGroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+            $goods_info = GroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
             if ($goods_info) {
                 // 团购的下单数量
-                $buy_group_num = CommunityGroupOrder::where('group_id', $value['id'])->count();
+                $buy_group_num = GroupOrder::where('group_id', $value['id'])->count();
                 $group_result[$key]['buy_group_num'] = $buy_group_num;
 
                 foreach ($goods_info as $k => $v) {
                     // 商品图片
-                    $goods_img = CommunityGroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
+                    $goods_img = GroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
                     if ($goods_img) {
                         $goods_img = $goods_img->toArray();
                     }
@@ -201,11 +189,11 @@ class IndexController extends BaseController
                 $group_result[$key]['goods_info'] = $goods_info;
             }
 
-            $click_user_info = CommunityGroupUserClick::where('community_small_id', $this->smallid)->where('group_id', $value['id'])->select('id', 'openid')->orderBy('update_at', 'desc')->take(36)->get();
+            $click_user_info = GroupUserClick::where('group_id', $value['id'])->select('id', 'openid')->orderBy('update_at', 'desc')->take(36)->get();
             if ($click_user_info) {
                 foreach ($click_user_info as $k => $v) {
                     // 用户头像
-                    $user_avatar = CommunityUser::where('community_small_id', $this->smallid)->where('openid', $v['openid'])->select('id', 'avatar')->get();
+                    $user_avatar = User::where('openid', $v['openid'])->select('id', 'avatar')->get();
                     if ($user_avatar->count()) {
                         // 不为空
                         $user_avatar = $user_avatar->toArray();
@@ -230,6 +218,7 @@ class IndexController extends BaseController
      *
      * @param $begin_time
      * @param $end_time
+     *
      * @return array
      */
     private function timediff($begin_time, $end_time)

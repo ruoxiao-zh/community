@@ -8,23 +8,24 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCheckCodeManager;
-use App\Http\Controllers\Community\Tables\CommunityCompany;
-use App\Http\Controllers\Community\Tables\CommunityDeliveryArea;
-use App\Http\Controllers\Community\Tables\CommunityGroup;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetailPicture;
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\Tables\CommunityUser;
 use Illuminate\Http\Request;
 use App\Common\CurlHelper;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
+use App\Http\Controllers\Controller;
+// 数据库模型
+use App\Models\CheckCodeManager;
+use App\Models\Company;
+use App\Models\DeliveryArea;
+use App\Models\Group;
+use App\Models\GroupDetail;
+use App\Models\GroupDetailPicture;
+use App\Models\User;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
 
 // Excel 数据操作
-require_once __DIR__ . '/../GroupPurchase/Excel/PHPExcel.php';
+require_once __DIR__ . '/../../../../SDK/Excel/PHPExcel.php';
 
-class OrderListController extends BaseController
+class OrderListController extends Controller
 {
     /**
      * 后台订单列表
@@ -35,13 +36,8 @@ class OrderListController extends BaseController
      */
     public function getBackOrderList(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 所有订单
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->where('is_delete', 0)->select('id',
+        $result = GroupOrder::where('is_delete', 0)->select('id',
             'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_buy_for_commander',
             'is_delivery', 'delivery_area_id', 'express', 'express_number', 'create_at')->orderBy('create_at',
             'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/back');
@@ -62,15 +58,14 @@ class OrderListController extends BaseController
         if ($result) {
             foreach ($result as $key => $value) {
                 // 单个订单详情
-                $order_detail = CommunityGroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id',
+                $order_detail = GroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id',
                     'goods_id', 'goods_num')->get();
                 if ($order_detail) {
                     $order_detail = $order_detail->toArray();
                     $goods = '';
                     foreach ($order_detail as $k => $v) {
                         // 每个订单中包含的商品
-                        $order_goods = CommunityGroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name',
-                            'goods_specification', 'goods_price')->first();
+                        $order_goods = GroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
                         if ($order_goods) {
                             $order_goods = $order_goods->toArray();
                         }
@@ -82,8 +77,7 @@ class OrderListController extends BaseController
                 $result[$key]['goods_info'] = $goods;
 
                 if ($value->is_delivery == 1) {
-                    $deliver_area_info = CommunityDeliveryArea::where('id',
-                        $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
+                    $deliver_area_info = DeliveryArea::where('id', $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
                     $result[$key]['deliver_area_info'] = $deliver_area_info;
                 }
             }
@@ -99,11 +93,6 @@ class OrderListController extends BaseController
      */
     public function getFrontOrderList(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 微信用户的 openid
         $openid = $request->input('openid');
         if ( !$openid) {
@@ -114,11 +103,7 @@ class OrderListController extends BaseController
         $order_status = (int)$request->input('order_status');
 
         // 所有订单
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->where('is_delete',
-            0)->where('openid', $openid)->where('order_status', $order_status)->select('id', 'order_number', 'group_id',
-            'username', 'phone', 'address', 'order_status', 'total_money', 'token', 'express', 'express_number',
-            'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at',
-            'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/front');
+        $result = GroupOrder::where('is_delete', 0)->where('openid', $openid)->where('order_status', $order_status)->select('id', 'order_number', 'group_id', 'username', 'phone', 'address', 'order_status', 'total_money', 'token', 'express', 'express_number', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/front');
 
         // 前台订单详情
         $this->frontOrderDetail($result);
@@ -136,8 +121,7 @@ class OrderListController extends BaseController
         if ($result) {
             foreach ($result as $key => $value) {
                 // 团购图片
-                $group_picture = CommunityGroup::where('id', $value->group_id)->select('theme', 'introduce',
-                    'introduce_picture')->first();
+                $group_picture = Group::where('id', $value->group_id)->select('theme', 'introduce', 'introduce_picture')->first();
                 if ($group_picture) {
                     $result[$key]['theme'] = $group_picture->theme;
                     $result[$key]['introduce'] = $group_picture->introduce;
@@ -145,15 +129,13 @@ class OrderListController extends BaseController
                 }
 
                 // 单个订单详情
-                $order_detail = CommunityGroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id',
-                    'goods_id', 'goods_num')->get();
+                $order_detail = GroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id', 'goods_id', 'goods_num')->get();
                 if ($order_detail) {
                     $order_detail = $order_detail->toArray();
                     $goods = [];
                     foreach ($order_detail as $k => $v) {
                         // 每个订单中包含的商品
-                        $order_goods = CommunityGroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name',
-                            'goods_specification', 'goods_price')->first();
+                        $order_goods = GroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
                         if ($order_goods) {
                             $order_goods = $order_goods->toArray();
                         }
@@ -162,8 +144,7 @@ class OrderListController extends BaseController
                         $order_goods['goods_num'] = $v['goods_num'];
 
                         // 商品图片
-                        $goods_img = CommunityGroupDetailPicture::where('goods_id', $v['goods_id'])->select('id',
-                            'picture')->get();
+                        $goods_img = GroupDetailPicture::where('goods_id', $v['goods_id'])->select('id', 'picture')->get();
                         if ($goods_img) {
                             $goods_img = $goods_img->toArray();
                         }
@@ -175,8 +156,7 @@ class OrderListController extends BaseController
                 $result[$key]['goods_info'] = $goods;
 
                 if ($value->is_delivery == 1) {
-                    $deliver_area_info = CommunityDeliveryArea::where('id',
-                        $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
+                    $deliver_area_info = DeliveryArea::where('id', $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
                     $result[$key]['deliver_area_info'] = $deliver_area_info;
                 }
             }
@@ -192,14 +172,8 @@ class OrderListController extends BaseController
      */
     public function searchBackOrderList(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 所有订单
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->where('is_delete',
-            0)->where(function ($query) use ($request) {
+        $result = GroupOrder::where('is_delete', 0)->where(function ($query) use ($request) {
             ($request->input('order_status') !== '7') && $query->where('order_status',
                 (int)$request->input('order_status'));
             ($request->input('belongs_commander') !== '0') && $query->where('belongs_commander',
@@ -210,9 +184,7 @@ class OrderListController extends BaseController
                 strtotime($request->input('begin_time')));
             ($request->input('end_time') !== '0') && $query->where('create_at', '<',
                 strtotime($request->input('end_time')));
-        })->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money',
-            'is_buy_for_commander', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at',
-            'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/back');
+        })->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_buy_for_commander', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/back');
 
         // 后台订单详情
         $this->backOrderDetail($result);
@@ -229,22 +201,14 @@ class OrderListController extends BaseController
      */
     public function deliverGoods(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = (int)$request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         }
 
-        $order_info = CommunityGroupOrder::find($order_id);
+        $order_info = GroupOrder::find($order_id);
         if ( !$order_info) {
             return jsonHelper(103, '传入的参数异常: order_id');
-        }
-        if ($order_info->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足, 无法删除');
         }
 
         if ($order_info->order_status == 3) {
@@ -287,11 +251,6 @@ class OrderListController extends BaseController
      */
     public function deliverGoodsToghter(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 订单 ID 数组
         $order_id_array = $request->input('order_id');
         if ( !$order_id_array) {
@@ -301,7 +260,7 @@ class OrderListController extends BaseController
 
         // 查询订单
         foreach ($order_id_array as $key => $value) {
-            $order_info = CommunityGroupOrder::find($value);
+            $order_info = GroupOrder::find($value);
             if ($order_info) {
                 $order_info->update([
                     'order_status' => 3
@@ -321,23 +280,18 @@ class OrderListController extends BaseController
      */
     public function getqrcode(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 订单 id
         $order_id = (int)$request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         } else {
-            $order = CommunityGroupOrder::find($order_id);
+            $order = GroupOrder::find($order_id);
             if ( !$order) {
                 return jsonHelper(103, '订单不存在, 请检查订单 ID');
             }
         }
 
-        $pay_config = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $pay_config = PayConfig::first();
         // 获取 access_token
         $access_token = $this->getAccessToken($request, $pay_config);
 
@@ -386,11 +340,6 @@ class OrderListController extends BaseController
      */
     public function checkOrder(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
@@ -402,8 +351,7 @@ class OrderListController extends BaseController
             return jsonHelper(103, '必要的参数不能为空: openid');
         }
         // 如果该核销员可以核销所有区域
-        $is_all_area_check_code_manager = CommunityCheckCodeManager::where('community_small_id',
-            $this->smallid)->where('is_delete', 0)->where('level', 1)->where('openid', $openid)->get();
+        $is_all_area_check_code_manager = CheckCodeManager::where('is_delete', 0)->where('level', 1)->where('openid', $openid)->get();
         if ($is_all_area_check_code_manager) {
             foreach ($is_all_area_check_code_manager as $key => $value) {
                 if ($openid == $value->openid) {
@@ -411,7 +359,7 @@ class OrderListController extends BaseController
                     \DB::beginTransaction();
                     // 写入订单数据
                     try {
-                        CommunityGroupOrder::where('id', $order_id)->update([
+                        GroupOrder::where('id', $order_id)->update([
                             'order_status' => 4,
                         ]);
                         // 提交数据
@@ -429,11 +377,10 @@ class OrderListController extends BaseController
         }
 
         // 如果该核销员可以核销指定区域
-        $order_info = CommunityGroupOrder::find($order_id);
+        $order_info = GroupOrder::find($order_id);
         if ($order_info) {
             // 所有的配送区域
-            $receiver_delivery = CommunityCheckCodeManager::where('community_small_id',
-                $this->smallid)->where('is_delete', 0)->where('delivery_id', $order_info->delivery_id)->get();
+            $receiver_delivery = CheckCodeManager::where('is_delete', 0)->where('delivery_id', $order_info->delivery_id)->get();
             if ($receiver_delivery) {
                 foreach ($receiver_delivery as $key => $value) {
                     if ($openid == $value->openid) {
@@ -441,7 +388,7 @@ class OrderListController extends BaseController
                         \DB::beginTransaction();
                         // 写入订单数据
                         try {
-                            CommunityGroupOrder::where('id', $order_id)->update([
+                            GroupOrder::where('id', $order_id)->update([
                                 'order_status' => 4,
                             ]);
                             // 提交数据
@@ -473,11 +420,6 @@ class OrderListController extends BaseController
      */
     public function orderConfirm(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
@@ -489,7 +431,7 @@ class OrderListController extends BaseController
             return jsonHelper(103, '必要的参数不能为空: openid');
         }
 
-        $order = CommunityGroupOrder::where('id', $order_id)->where('openid', $openid)->first();
+        $order = GroupOrder::where('id', $order_id)->where('openid', $openid)->first();
         if ($order) {
             $order->update([
                 'order_status' => 4,
@@ -508,22 +450,17 @@ class OrderListController extends BaseController
      */
     public function deleteOrder(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         }
 
-        $order = CommunityGroupOrder::find($order_id);
+        $order = GroupOrder::find($order_id);
         if ( !$order) {
             return jsonHelper(103, '传入的参数异常: order_id');
         }
 
-        CommunityGroupOrder::where('id', $order_id)->update([
+        GroupOrder::where('id', $order_id)->update([
             'is_delete' => 1
         ]);
 
@@ -539,29 +476,20 @@ class OrderListController extends BaseController
      */
     public function singleOrderExport(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = (int)$request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         }
 
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->where('id', $order_id)->select('id',
-            'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_delivery',
-            'delivery_area_id', 'create_at')->first();
+        $result = GroupOrder::where('id', $order_id)->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_delivery', 'delivery_area_id', 'create_at')->first();
         if ($result) {
             $result = $result->toArray();
-            $order_detail = CommunityGroupOrderDetail::where('order_id', $order_id)->select('id', 'order_id',
-                'goods_id', 'goods_num')->get();
+            $order_detail = GroupOrderDetail::where('order_id', $order_id)->select('id', 'order_id', 'goods_id', 'goods_num')->get();
             if ($order_detail) {
                 $goods = '';
                 foreach ($order_detail as $k => $v) {
                     // 每个订单中包含的商品
-                    $order_goods = CommunityGroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name',
-                        'goods_specification', 'goods_price')->first();
+                    $order_goods = GroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
                     if ($order_goods) {
                         $order_goods = $order_goods->toArray();
                     }
@@ -572,8 +500,7 @@ class OrderListController extends BaseController
                 $result['goods_info'] = $goods;
 
                 if ($result['is_delivery'] == 1) {
-                    $deliver_area_info = CommunityDeliveryArea::where('id',
-                        $result['delivery_area_id'])->select('delivery_area', 'phone', 'address')->first()->toArray();
+                    $deliver_area_info = DeliveryArea::where('id', $result['delivery_area_id'])->select('delivery_area', 'phone', 'address')->first()->toArray();
                     $result['address'] = '配送点地址: ' . $deliver_area_info['address'] . '(电话: ' . $deliver_area_info['phone'] . ')';
                 }
 
@@ -705,11 +632,6 @@ class OrderListController extends BaseController
      */
     public function export(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 订单 ID 数组
         $order_id_array = $request->input('order_id');
         if ( !$order_id_array) {
@@ -718,23 +640,18 @@ class OrderListController extends BaseController
         $order_id_array = explode(',', $order_id_array);
 
         // 查询订单
-        $result = \DB::table('community_group_order')->where('community_small_id', $this->smallid)->whereIn('id',
-            $order_id_array)->select('id', 'order_number', 'username', 'phone', 'address', 'order_status',
-            'total_money', 'express', 'express_number', 'is_delivery', 'delivery_area_id',
-            'create_at')->orderBy('create_at', 'desc')->get();
+        $result = \DB::table('community_group_order')->whereIn('id', $order_id_array)->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'express', 'express_number', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->get();
         if ($result) {
             foreach ($result as $key => $value) {
                 // 单个订单详情
                 $result[$key] = (array)$result[$key];
-                $order_detail = CommunityGroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id',
-                    'goods_id', 'goods_num')->get();
+                $order_detail = GroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id', 'goods_id', 'goods_num')->get();
                 if ($order_detail) {
                     $order_detail = $order_detail->toArray();
                     $goods = '';
                     foreach ($order_detail as $k => $v) {
                         // 每个订单中包含的商品
-                        $order_goods = CommunityGroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name',
-                            'goods_specification', 'goods_price')->first();
+                        $order_goods = GroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
                         if ($order_goods) {
                             $order_goods = $order_goods->toArray();
                         }
@@ -746,8 +663,7 @@ class OrderListController extends BaseController
                 $result[$key]['goods_info'] = $goods;
 
                 if ($value->is_delivery == 1) {
-                    $deliver_area_info = CommunityDeliveryArea::where('id',
-                        $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
+                    $deliver_area_info = DeliveryArea::where('id', $value->delivery_area_id)->select('delivery_area', 'phone', 'address')->first()->toArray();
                     $result[$key]['address'] = $deliver_area_info['delivery_area'];
                 }
 
@@ -775,7 +691,7 @@ class OrderListController extends BaseController
                     $result[$key]['express_number'] = '`' . $result[$key]['express_number'];
                 }
                 // 公司信息
-                $company_deliver_info = CommunityCompany::where('community_small_id', $this->smallid)->first();
+                $company_deliver_info = Company::first();
                 if ($company_deliver_info) {
                     $result[$key]['address'] = $company_deliver_info->delivery_city . $result[$key]['address'];
                 }
@@ -865,17 +781,11 @@ class OrderListController extends BaseController
      */
     public function recentOrder(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->select('id',
-            'username', 'openid', 'create_at')->orderBY('id', 'desc')->take(10)->get();
+        $result = GroupOrder::select('id', 'username', 'openid', 'create_at')->orderBY('id', 'desc')->take(10)->get();
         if ($result) {
             $this->backOrderDetail($result);
             foreach ($result as $key => $value) {
-                $userinfo = CommunityUser::where('openid', $value->openid)->first();
+                $userinfo = User::where('openid', $value->openid)->first();
                 $result[$key]['avatar'] = $userinfo->avatar;
             }
         }

@@ -8,22 +8,23 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityUser;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
 use App\Common\CurlHelper;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityGroup;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetailPicture;
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\Tables\CommunityGroupUserClick;
+use App\Models\Commander;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\User;
+use App\Models\Group;
+use App\Models\GroupDetail;
+use App\Models\GroupDetailPicture;
+use App\Models\PayConfig;
+use App\Models\GroupUserClick;
 
-class GroupController extends BaseController
+class GroupController extends Controller
 {
     /**
      * 上传拼团介绍图片
@@ -33,11 +34,6 @@ class GroupController extends BaseController
      */
     public function groupUploadImg(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $logo = SaveImage::getSaveImageUrl('images/community/group', 'introduce_picture', '', false);
         if ( !$logo) {
             return jsonHelper(101, '必要的参数不能为空: introduce_picture');
@@ -54,11 +50,6 @@ class GroupController extends BaseController
      */
     public function create(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 团购主题
         $theme = $request->input('theme');
         if ( !$theme) {
@@ -108,12 +99,11 @@ class GroupController extends BaseController
                 'introduce'          => $introduce,
                 'begin_time'         => $begin_time,
                 'end_time'           => $end_time,
-                'introduce_picture'  => $introduce_picture,
-                'community_small_id' => $this->smallid
+                'introduce_picture'  => $introduce_picture
             ]);
             if ($group_id) {
                 foreach ($group_goods as $key => $value) {
-                    CommunityGroupDetail::where('id', $value['goods_id'])->update([
+                    GroupDetail::where('id', $value['goods_id'])->update([
                         'group_id' => $group_id
                     ]);
                 }
@@ -140,23 +130,14 @@ class GroupController extends BaseController
      */
     public function update(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityGroup::find($group_id);
+        $obj = Group::find($group_id);
         if ( !$obj) {
             return jsonHelper(102, '传入的参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(103, '权限不足, 不能删除');
         }
 
         // 团购主题
@@ -208,14 +189,13 @@ class GroupController extends BaseController
                 'introduce'          => $introduce,
                 'begin_time'         => $begin_time,
                 'end_time'           => $end_time,
-                'introduce_picture'  => $introduce_picture,
-                'community_small_id' => $this->smallid
+                'introduce_picture'  => $introduce_picture
             ]);
 
             if ($group_id) {
-                CommunityGroupDetail::where('group_id', $group_id)->update(['group_id' => 0]);
+                GroupDetail::where('group_id', $group_id)->update(['group_id' => 0]);
                 foreach ($group_goods as $key => $value) {
-                    CommunityGroupDetail::where('id', $value['goods_id'])->update([
+                    GroupDetail::where('id', $value['goods_id'])->update([
                         'group_id' => $group_id
                     ]);
                 }
@@ -241,27 +221,22 @@ class GroupController extends BaseController
      */
     public function detail(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('id', $group_id)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->first();
+        $group_result = Group::where('id', $group_id)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->first();
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         } else {
             $group_result = $group_result->toArray();
         }
 
-        $goods_info = CommunityGroupDetail::where('community_small_id', $this->smallid)->where('group_id', $group_id)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+        $goods_info = GroupDetail::where('group_id', $group_id)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
         if ($goods_info) {
             foreach ($goods_info as $key => $value) {
-                $goods_img = CommunityGroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
+                $goods_img = GroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
                 if ($goods_img) {
                     $goods_img = $goods_img->toArray();
                 }
@@ -271,10 +246,10 @@ class GroupController extends BaseController
         $group_result['goods_info'] = $goods_info;
 
         // 2017.5.21 修改未添加团购的商品也显示
-        $no_group_goods_info = CommunityGroupDetail::where('community_small_id', $this->smallid)->where('group_id', 0)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+        $no_group_goods_info = GroupDetail::where('group_id', 0)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
         if ($no_group_goods_info) {
             foreach ($no_group_goods_info as $key => $value) {
-                $goods_img = CommunityGroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
+                $goods_img = GroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
                 if ($goods_img) {
                     $goods_img = $goods_img->toArray();
                 }
@@ -294,21 +269,16 @@ class GroupController extends BaseController
      */
     public function show(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('is_delete', 0)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_top','is_putaway', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/group');
+        $group_result = Group::where('is_delete', 0)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_top','is_putaway', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/group');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
 
         foreach ($group_result as $key => $value) {
-            $goods_info = CommunityGroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+            $goods_info = GroupDetail::where('group_id', $value['id'])->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
             if ($goods_info) {
                 foreach ($goods_info as $k => $v) {
-                    $goods_img = CommunityGroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
+                    $goods_img = GroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
                     if ($goods_img) {
                         $goods_img = $goods_img->toArray();
                     }
@@ -329,29 +299,20 @@ class GroupController extends BaseController
      */
     public function delete(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityGroup::find($group_id);
+        $obj = Group::find($group_id);
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足, 不能删除');
         }
 
         $obj->update([
             'is_delete' => 1
         ]);
-        $goods = CommunityGroupDetail::where('group_id', $group_id)->get();
+        $goods = GroupDetail::where('group_id', $group_id)->get();
         foreach ($goods as $key => $value) {
             $value->group_id = 0;
             $value->save();
@@ -368,23 +329,14 @@ class GroupController extends BaseController
      */
     public function putaway(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityGroup::find($group_id);
+        $obj = Group::find($group_id);
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足, 不能删除');
         }
 
         if ($obj->is_putaway == 0) {
@@ -411,23 +363,14 @@ class GroupController extends BaseController
      */
     public function putGroupTop(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityGroup::find($group_id);
+        $obj = Group::find($group_id);
         if ( !$obj) {
             return jsonHelper(103, '传入的参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足, 不能删除');
         }
 
         if ($obj->is_top == 0) {
@@ -453,12 +396,7 @@ class GroupController extends BaseController
      */
     public function goodsList(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $goods_info = CommunityGroupDetail::where('community_small_id', $this->smallid)->where('group_id', 0)->where('is_delete', 0)->select('id', 'goods_name', 'create_at')->get();
+        $goods_info = GroupDetail::where('group_id', 0)->where('is_delete', 0)->select('id', 'goods_name', 'create_at')->get();
 
         return jsonHelper(0, '获取成功', $goods_info);
     }
@@ -471,12 +409,7 @@ class GroupController extends BaseController
      */
     public function search(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $group_result = CommunityGroup::where('community_small_id', $this->smallid)->where('is_delete', 0)->where(function ($query) use ($request) {
+        $group_result = Group::where('is_delete', 0)->where(function ($query) use ($request) {
             ($request->input('theme') !== '') && $query->where('theme', 'like', $request->input('theme') . '%');
             ($request->input('begin_time') !== '') && $query->where('begin_time', '>=', strtotime($request->input('begin_time')));
             ($request->input('end_time') !== '') && $query->where('end_time', '<=', strtotime($request->input('end_time')));
@@ -487,10 +420,10 @@ class GroupController extends BaseController
         }
 
         foreach ($group_result as $key => $value) {
-            $goods_info = CommunityGroupDetail::where('group_id', $value['id'])->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
+            $goods_info = GroupDetail::where('group_id', $value['id'])->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->get();
             if ($goods_info) {
                 foreach ($goods_info as $k => $v) {
-                    $goods_img = CommunityGroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
+                    $goods_img = GroupDetailPicture::where('goods_id', $v['id'])->select('id', 'picture')->get();
                     if ($goods_img) {
                         $goods_img = $goods_img->toArray();
                     }
@@ -511,11 +444,6 @@ class GroupController extends BaseController
      */
     public function frontDetail(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
@@ -526,7 +454,7 @@ class GroupController extends BaseController
             return jsonHelper(104, '必要的参数不能为空: openid');
         }
 
-        $group_result = CommunityGroup::where('id', $group_id)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->first();
+        $group_result = Group::where('id', $group_id)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->first();
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         } else {
@@ -534,16 +462,16 @@ class GroupController extends BaseController
         }
         $group_result['time_reminding'] = $this->timediff(time(), $group_result['end_time']);
 
-        $goods_info = CommunityGroupDetail::where('group_id', $group_id)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->orderBy('create_at', 'desc')->get();
+        $goods_info = GroupDetail::where('group_id', $group_id)->where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num')->orderBy('create_at', 'desc')->get();
         if ($goods_info) {
             foreach ($goods_info as $key => $value) {
-                $order_ids_arr = \DB::table('community_group_order')->where('community_small_id', $this->smallid)->where('group_id', $group_id)->lists('id');
+                $order_ids_arr = \DB::table('community_group_order')->where('group_id', $group_id)->lists('id');
                 // 已购买的订单人数
-                $order_goods_num = \DB::table('community_group_order_detail')->where('community_small_id', $this->smallid)->where('goods_id', $value['id'])->whereIn('order_id', $order_ids_arr)->count();
+                $order_goods_num = \DB::table('community_group_order_detail')->where('goods_id', $value['id'])->whereIn('order_id', $order_ids_arr)->count();
                 $goods_info[$key]['order_goods_num'] = $order_goods_num;
 
                 // 商品图片
-                $goods_img = CommunityGroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
+                $goods_img = GroupDetailPicture::where('goods_id', $value['id'])->select('id', 'picture')->get();
                 if ($goods_img) {
                     $goods_img = $goods_img->toArray();
                 }
@@ -555,15 +483,14 @@ class GroupController extends BaseController
         // 用户点击进来点击数加 1
         \DB::table('community_group')->where('id', $group_id)->increment('click_num');
         // 用户点击信息写入数据库
-        $is_insert = CommunityGroupUserClick::where('community_small_id', $this->smallid)->where('openid', $openid)->where('group_id', $group_id)->first();
+        $is_insert = GroupUserClick::where('openid', $openid)->where('group_id', $group_id)->first();
         if ( !$is_insert) {
-            CommunityGroupUserClick::create([
+            GroupUserClick::create([
                 'openid'             => $openid,
-                'group_id'           => $group_id,
-                'community_small_id' => $this->smallid,
+                'group_id'           => $group_id
             ]);
         } else {
-            CommunityGroupUserClick::where('id', $is_insert->id)->update([
+            GroupUserClick::where('id', $is_insert->id)->update([
                 'update_at' => date('Y-m-d H:i:s', time())
             ]);
         }
@@ -579,27 +506,22 @@ class GroupController extends BaseController
      */
     public function orderPerson(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $result = CommunityGroupOrder::where('community_small_id', $this->smallid)->where('group_id', $group_id)->select('id', 'openid', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/front/group/person');
+        $result = GroupOrder::where('group_id', $group_id)->select('id', 'openid', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/front/group/person');
         if ($result) {
             foreach ($result as $key => $value) {
                 // 单个订单详情
-                $order_detail = CommunityGroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id', 'goods_id', 'goods_num')->get();
+                $order_detail = GroupOrderDetail::where('order_id', $value->id)->select('id', 'order_id', 'goods_id', 'goods_num')->get();
                 if ($order_detail) {
                     $order_detail = $order_detail->toArray();
                     $goods = [];
                     foreach ($order_detail as $k => $v) {
                         // 每个订单中包含的商品
-                        $order_goods = CommunityGroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
+                        $order_goods = GroupDetail::where('id', $v['goods_id'])->select('id', 'goods_name', 'goods_specification', 'goods_price')->first();
                         if ($order_goods) {
                             $order_goods = $order_goods->toArray();
                         }
@@ -611,7 +533,7 @@ class GroupController extends BaseController
                 $result[$key]['goods_info'] = $goods;
 
                 // 用户头像与昵称
-                $user = CommunityUser::where('community_small_id', $this->smallid)->where('openid', $value->openid)->select('nickname', 'avatar')->first();
+                $user = User::where('openid', $value->openid)->select('nickname', 'avatar')->first();
                 if ($user) {
                     $result[$key]['nickname'] = $user->nickname;
                     $result[$key]['avatar'] = $user->avatar;
@@ -640,8 +562,8 @@ class GroupController extends BaseController
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $buy_group_num = CommunityGroupOrder::where('group_id', $group_id)->count();
-        $click_num = CommunityGroup::where('id', $group_id)->select('click_num')->first();
+        $buy_group_num = GroupOrder::where('group_id', $group_id)->count();
+        $click_num = Group::where('id', $group_id)->select('click_num')->first();
 
         $data = [
             'buy_group_num' => $buy_group_num,
@@ -669,7 +591,7 @@ class GroupController extends BaseController
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: group_id');
         } else {
-            $group = CommunityGroup::find($group_id);
+            $group = Group::find($group_id);
             if ( !$group) {
                 return jsonHelper(103, '传入的参数异常: group_id');
             }
@@ -678,7 +600,7 @@ class GroupController extends BaseController
         // 团长的 openid
         $commander_openid = $request->input('openid');
         if ($commander_openid) {
-            $commander = CommunityCommander::where('community_small_id', $this->smallid)->where('openid', $commander_openid)->first();
+            $commander = Commander::where('openid', $commander_openid)->first();
             if ($commander) {
                 $commander_id = $commander->id;
             } else {
@@ -693,7 +615,7 @@ class GroupController extends BaseController
             return jsonHelper(105, '必要的参数不能为空: fid');
         }
 
-        $pay_config = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $pay_config = PayConfig::first();
         // 获取 access_token
         $access_token = $this->getAccessToken($request, $pay_config);
 

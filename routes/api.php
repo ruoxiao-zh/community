@@ -145,9 +145,9 @@ Route::middleware('auth:api')->namespace('Api/V1')->prefix('v1')->group(function
     Route::post('news/group-reserve', 'NewsController@groupReserve');
 
     // 用户推荐商品
-    Route::get('user-recommend', 'UserRecommend@index');
-    Route::post('user-recommend/add', 'UserRecommend@add');
-    Route::get('user-recommend/delete', 'UserRecommend@delete');
+    Route::get('user-recommend', 'UserRecommendController@index');
+    Route::post('user-recommend/add', 'UserRecommendController@add');
+    Route::get('user-recommend/delete', 'UserRecommendController@delete');
 
     // 定时任务
     Route::get('auto-confirm-order', 'OrderController@confirmOrder');

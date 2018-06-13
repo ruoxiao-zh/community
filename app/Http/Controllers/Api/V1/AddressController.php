@@ -10,8 +10,9 @@ namespace App\Http\Controllers\Community;
 
 use Illuminate\Http\Request;
 use App\Models\UserAddress;
+use App\Http\Controllers\Controller;
 
-class AddressController extends BaseController
+class AddressController extends Controller
 {
     /**
      * 添加或修改收货地址
@@ -21,11 +22,6 @@ class AddressController extends BaseController
      */
     public function addAddress(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         // 微信用户的 openid
         $openid = $request->input('openid');
         if ( !$openid) {
@@ -110,11 +106,6 @@ class AddressController extends BaseController
      */
     public function addressList(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         // 微信用户的 openid
         $openid = $request->input('openid');
         if ( !$openid) {
@@ -135,11 +126,6 @@ class AddressController extends BaseController
      */
     public function addressDel(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');

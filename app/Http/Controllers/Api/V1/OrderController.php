@@ -8,17 +8,18 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityCommanderOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityDelivery;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
+use App\Models\Commander;
+use App\Models\CommanderOrder;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\Delivery;
+use App\Models\GroupDetail;
 
-class OrderController extends BaseController
+class OrderController extends Controller
 {
     /**
      * 下单
@@ -29,19 +30,13 @@ class OrderController extends BaseController
      */
     public function placeOrder(Request $request)
     {
-        // 判断用户是否登录失败
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
-        }
-
         // 随机令牌
         $token = $request->input('token');
         if ( !$token) {
             return jsonHelper(102, '必要的参数不能为空: token');
         } else {
-            $is_insert = CommunityGroupOrder::where([
-                'community_small_id' => $this->smallid,
-                'token'              => $token
+            $is_insert = GroupOrder::where([
+                'token' => $token
             ])->first();
 
             if ($is_insert == true) {
@@ -124,13 +119,12 @@ class OrderController extends BaseController
             if ( !$delivery_name) {
                 return jsonHelper(110, '必要的参数不能为空: delivery_name');
             } else {
-                $is_set_delivery = CommunityDelivery::where('community_small_id', $this->smallid)->where('deliver_name', 'like', $delivery_name . '%')->first();
+                $is_set_delivery = Delivery::where('deliver_name', 'like', $delivery_name . '%')->first();
                 if ($is_set_delivery) {
                     $delivery_id = $is_set_delivery->id;
                 } else {
                     $delivery_id = DB::table('community_deliver')->insertGetId([
                         'deliver_name'       => $delivery_name,
-                        'community_small_id' => $this->smallid
                     ]);
                 }
             }
@@ -164,7 +158,6 @@ class OrderController extends BaseController
                     //                    'is_delivery'          => $is_delivery,
                     //                    'delivery_area_id'     => $delivery_area_id,
                     'token'                => $token,
-                    'community_small_id'   => $this->smallid
                 ]);
             } else if ($is_delivery == 1) {
                 // 订单数据
@@ -184,21 +177,19 @@ class OrderController extends BaseController
                     'is_delivery'          => $is_delivery,
                     'delivery_area_id'     => $delivery_area_id,
                     'token'                => $token,
-                    'community_small_id'   => $this->smallid
                 ]);
             }
 
             // 订单商品详情
             if ($order_id) {
                 foreach ($goods_info as $key => $value) {
-                    $goods_price = CommunityGroupDetail::find($value['goods_id']);
+                    $goods_price = GroupDetail::find($value['goods_id']);
                     if ($goods_price) {
-                        CommunityGroupOrderDetail::create([
+                        GroupOrderDetail::create([
                             'order_id'           => $order_id,
                             'goods_id'           => $value['goods_id'],
                             'goods_num'          => $value['goods_num'],
                             'goods_sum'          => ($goods_price->goods_price) * ($value['goods_num']),
-                            'community_small_id' => $this->smallid,
                         ]);
                     }
                 }
@@ -267,8 +258,7 @@ class OrderController extends BaseController
      */
     public function confirmOrder()
     {
-        //        $order = GroupOrder::where('order_status', 3)->where('express', '!=', '')->where('express_number', '!=', '')->get();
-        $order = CommunityGroupOrder::where('order_status', 3)->get();
+        $order = GroupOrder::where('order_status', 3)->get();
         if ($order) {
             $order = $order->toArray();
             // 发货时间要是 > 两天, 确认收货
@@ -278,7 +268,7 @@ class OrderController extends BaseController
                 $tow_days = 3600 * 24 * 3;
                 if ($is_greater_than > $tow_days) {
                     // 将订单状态自动改为完成
-                    CommunityGroupOrder::where('id', $value['id'])->update([
+                    GroupOrder::where('id', $value['id'])->update([
                         'order_status' => 4
                     ]);
                     // 信息写入日志

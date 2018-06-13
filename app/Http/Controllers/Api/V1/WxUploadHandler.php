@@ -6,7 +6,7 @@
  * Time: 3:04 PM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 class WxUploadHandler
 {

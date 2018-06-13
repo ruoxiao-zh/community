@@ -11,10 +11,11 @@ namespace App\Http\Controllers\Community;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityCompany;
+use App\Models\Company;
 
-class CompanyController extends BaseController
+class CompanyController extends Controller
 {
     /**
      * 信息展示
@@ -24,12 +25,7 @@ class CompanyController extends BaseController
      */
     public function index(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityCompany::where('community_small_id', $this->smallid)->select('id', 'company_name', 'company_img', 'company_phone', 'company_address', 'company_info', 'company_copyright', 'delivery_type', 'create_at')->get();
+        $obj = Company::select('id', 'company_name', 'company_img', 'company_phone', 'company_address', 'company_info', 'company_copyright', 'delivery_type', 'create_at')->get();
 
         return jsonHelper(0, '获取成功', $obj);
     }
@@ -42,11 +38,6 @@ class CompanyController extends BaseController
      */
     public function uploadImg(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $logo = SaveImage::getSaveImageUrl('images/community/company', 'company_img', '', false);
         if ( !$logo) {
             return jsonHelper(101, '必要的参数不能为空: company_img');
@@ -63,13 +54,7 @@ class CompanyController extends BaseController
      */
     public function store(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = new CommunityCompany();
-        $obj->community_small_id = $this->smallid;
+        $obj = new Company();
 
         $company_name = $request->input('company_name');
         if (empty($company_name)) {
@@ -131,17 +116,12 @@ class CompanyController extends BaseController
      */
     public function update(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = $request->input('id');
         if ( !$id) {
             return jsonHelper(101, '必要的参数不能为空: id');
         }
 
-        $obj = CommunityCompany::find($id);
+        $obj = Company::find($id);
         if ( !$obj) {
             return jsonHelper(102, '传入的id不存在');
         }
@@ -205,18 +185,9 @@ class CompanyController extends BaseController
      */
     public function destroy(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = CommunityCompany::where('community_small_id', $this->smallid)->first();
+        $obj = Company::first();
         if ( !$obj) {
             return jsonHelper(103, '暂无任何公司信息');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(104, '权限不足，不能删除');
         }
 
         $obj->delete();

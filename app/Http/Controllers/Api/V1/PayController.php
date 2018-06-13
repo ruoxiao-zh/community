@@ -8,43 +8,40 @@
 
 namespace App\Http\Controllers\Community;
 
-use App\Http\Controllers\Community\Tables\CommunityCommander;
-use App\Http\Controllers\Community\Tables\CommunityCommanderOrder;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 // 数据库模型
-use App\Http\Controllers\Community\Tables\CommunityPayConfig;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
-use App\Http\Controllers\Community\Tables\CommunityGroupOrderDetail;
-use App\Http\Controllers\Community\Tables\CommunityDelivery;
-use App\Http\Controllers\Community\Tables\CommunityGroupDetail;
+use App\Models\Commander;
+use App\Models\CommanderOrder;
+use App\Models\PayConfig;
+use App\Models\GroupOrder;
+use App\Models\GroupOrderDetail;
+use App\Models\Delivery;
+use App\Models\GroupDetail;
 
 // 微信支付 SDK
-require __DIR__ . '/../GroupPurchase/WxPay/WxPay.Api.php';
+require __DIR__ . '/../../../../SDK/WxPay/WxPay.Api.php';
 
-class PayController extends BaseController
+class PayController extends Controller
 {
     /**
      * 支付检测
      *
      * @param Request $request
+     *
      * @return string
      */
     public function getPreOrder(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         }
 
         // 检测有没有支付过
-        $order_status = CommunityGroupOrder::where('id', $order_id)->first();
+        $order_status = GroupOrder::where('id', $order_id)->first();
         if ($order_status) {
             if ($order_status->order_status != 0) {
                 return jsonHelper(103, '订单已经支付');
@@ -54,7 +51,7 @@ class PayController extends BaseController
         }
 
         // 支付配置
-        $pay_config = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $pay_config = PayConfig::first();
         if ($pay_config) {
             $pay_config = $pay_config->toArray();
         } else {
@@ -68,6 +65,7 @@ class PayController extends BaseController
      * 生成微信预订单
      *
      * @param $obj
+     *
      * @return mixed
      */
     private function makeWxPreOrder($obj, $pay_config)
@@ -84,7 +82,7 @@ class PayController extends BaseController
         // 设置微信用户的 openid, 唯一身份标识
         $wxOrderData->SetOpenid($obj->openid);
         // 微信支付的 key
-        $wxOrderData->SetAttach($pay_config['community_small_id']);
+//        $wxOrderData->SetAttach($pay_config['community_small_id']);
         // 接受微信的回调结果
         $wxOrderData->SetNotify_url('https://www.ailetugo.com/ailetutourism/public/community/pay-notify');
 
@@ -95,6 +93,7 @@ class PayController extends BaseController
      * 向微信请求订单号并生成签名
      *
      * @param $wxOrderData
+     *
      * @return mixed
      */
     private function getPaySignature($wxOrderData, $obj, $pay_config)
@@ -120,10 +119,9 @@ class PayController extends BaseController
     private function recordPreOrder($wxOrder, $obj)
     {
         // 必须是 update，每次用户取消支付后再次对同一订单支付，prepay_id是不同的
-        CommunityGroupOrder::where([
-            'community_small_id' => $this->smallid,
-            'openid'             => $obj->openid,
-            'id'                 => $obj->id
+        GroupOrder::where([
+            'openid' => $obj->openid,
+            'id'     => $obj->id
         ])->update([
             'prepay_id' => $wxOrder['prepay_id']
         ]);
@@ -133,6 +131,7 @@ class PayController extends BaseController
      * 签名
      *
      * @param $wxOrder
+     *
      * @return array
      */
     private function sign($wxOrder, $obj, $pay_config)
@@ -176,7 +175,7 @@ class PayController extends BaseController
         $data = $this->xmlToArray($xml);
 
         // 支付配置
-        $pay_config = CommunityPayConfig::where('community_small_id', $data['attach'])->first();
+        $pay_config = PayConfig::first();
         if ($pay_config) {
             $pay_config = $pay_config->toArray();
         } else {
@@ -195,6 +194,7 @@ class PayController extends BaseController
      * xml 转换为数组
      *
      * @param $xml
+     *
      * @return mixed
      */
     public function xmlToArray($xml)
@@ -213,15 +213,11 @@ class PayController extends BaseController
      * 前台申请退款
      *
      * @param Request $request
+     *
      * @return string
      */
     public function orderMoneyRefund(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
@@ -233,7 +229,7 @@ class PayController extends BaseController
         }
 
         // 检测有没有支付过
-        $order_status = CommunityGroupOrder::where('id', $order_id)->first();
+        $order_status = GroupOrder::where('id', $order_id)->first();
         if ($order_status) {
             if ($order_status->token != $token) {
                 return jsonHelper(0, '申请退款已提交,请不要重复点击');
@@ -245,7 +241,7 @@ class PayController extends BaseController
 
             // 订单已支付
             if ($order_status->order_status == 1) {
-                CommunityGroupOrder::where('community_small_id', $this->smallid)->where('id', $order_id)->update([
+                GroupOrder::where('id', $order_id)->update([
                     'order_status' => 6,
                     'token'        => md5(time() . $order_id)
                 ]);
@@ -261,22 +257,18 @@ class PayController extends BaseController
      * 微信退款
      *
      * @param Request $request
+     *
      * @return string
      */
     public function moneyRefund(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $order_id = $request->input('order_id');
         if ( !$order_id) {
             return jsonHelper(102, '必要的参数不能为空: order_id');
         }
 
         // 检测有没有支付过
-        $order_status = CommunityGroupOrder::where('id', $order_id)->first();
+        $order_status = GroupOrder::where('id', $order_id)->first();
         if ($order_status) {
             if ($order_status->order_status != 6) {
                 return jsonHelper(103, '订单尚未申请退款');
@@ -286,7 +278,7 @@ class PayController extends BaseController
         }
 
         // 支付配置
-        $pay_config = CommunityPayConfig::where('community_small_id', $this->smallid)->first()->toArray();
+        $pay_config = PayConfig::first()->toArray();
 
         return $this->makeWxPreRefund($order_status, $pay_config);
     }
@@ -296,6 +288,7 @@ class PayController extends BaseController
      *
      * @param $obj
      * @param $pay_config
+     *
      * @return string
      */
     private function makeWxPreRefund($obj, $pay_config)
@@ -320,7 +313,7 @@ class PayController extends BaseController
         /** 在返回的数组中,我们能够获取键名return_code */
         if ($order["return_code"] == "SUCCESS") {
             // 更新订单状态为 退款
-            $update_order_status = CommunityGroupOrder::where('id', $obj->id)->update([
+            $update_order_status = GroupOrder::where('id', $obj->id)->update([
                 'order_status' => 5
             ]);
 
@@ -329,14 +322,14 @@ class PayController extends BaseController
                 // 订单通过团长分享购买, 将团长的提成取消
                 if ($obj->is_buy_for_commander == 1) {
                     $commander_id = $obj->belongs_commander;
-                    $commander_info = CommunityCommander::find($commander_id);
+                    $commander_info = Commander::find($commander_id);
                     // 计算团长提成
-                    $order_goods_id = CommunityGroupOrderDetail::where('order_id', $obj->id)->get();
+                    $order_goods_id = GroupOrderDetail::where('order_id', $obj->id)->get();
                     $commander_money = 0;
                     if ($order_goods_id) {
                         foreach ($order_goods_id as $key => $value) {
                             $goods_id = $value->goods_id;
-                            $single_goods_royalty_rate = CommunityGroupDetail::where('id', $goods_id)->first();
+                            $single_goods_royalty_rate = GroupDetail::where('id', $goods_id)->first();
                             $single_order_goods_withdraw = ($value->goods_sum) * ($single_goods_royalty_rate->royalty_rate) / 100;
                             $commander_money += $single_order_goods_withdraw;
                         }
@@ -344,13 +337,13 @@ class PayController extends BaseController
 
                     // 订单提成金额
                     if ($commander_money) {
-                        CommunityCommander::where('id', $commander_id)->update([
+                        Commander::where('id', $commander_id)->update([
                             'total_money'    => ($commander_info->total_money) - ($obj->total_money),
                             'withdraw_money' => ($commander_info->withdraw_money) - $commander_money,
                             'residue_money'  => ($commander_info->residue_money) - $commander_money
                         ]);
                     }
-                    CommunityCommanderOrder::where('order_id', $obj->id)->delete();
+                    CommanderOrder::where('order_id', $obj->id)->delete();
                 }
 
                 return jsonHelper(0, '退款成功');
