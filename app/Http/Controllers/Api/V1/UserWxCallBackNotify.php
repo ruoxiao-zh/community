@@ -6,7 +6,7 @@
  * Time: 2:36 PM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Commander;
 use App\Models\CommanderOrder;

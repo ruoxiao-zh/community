@@ -6,7 +6,7 @@
  * Time: 11:28 AM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Models\UserAddress;
@@ -112,7 +112,7 @@ class AddressController extends Controller
             return jsonHelper(102, '必要的参数不能为空: openid');
         }
 
-        $result = UserAddress::where('community_small_id', $this->smallid)->where('openid', $openid)->select('id', 'openid', 'username', 'phone', 'province', 'city', 'area', 'housing_estate', 'detail', 'create_at')->orderBy('create_at', 'desc')->get();
+        $result = UserAddress::where('openid', $openid)->select('id', 'openid', 'username', 'phone', 'province', 'city', 'area', 'housing_estate', 'detail', 'create_at')->orderBy('create_at', 'desc')->get();
 
         return jsonHelper(0, '获取成功', $result);
     }

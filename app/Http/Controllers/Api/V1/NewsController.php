@@ -6,7 +6,7 @@
  * Time: 2:43 PM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Community\Tables\CommunityGroupOrder;
 use Illuminate\Http\Request;
@@ -31,7 +31,7 @@ class NewsController extends BaseController
             return jsonHelper(100, '登陆失败,可能原因：小程序已过期;后台未登陆');
         }
 
-        $pay_config = CommunityPayConfig::where('community_small_id', $this->smallid)->first();
+        $pay_config = CommunityPayConfig::first();
         if ( !$pay_config) {
             return jsonHelper(102, '请填写支付信息, 支付信息不完全无法发送模板消息');
         }

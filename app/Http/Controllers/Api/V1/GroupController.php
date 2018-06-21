@@ -6,7 +6,7 @@
  * Time: 3:01 PM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
@@ -552,11 +552,6 @@ class GroupController extends Controller
      */
     public function orderPersonCount(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $group_id = (int)$request->input('id');
         if ( !$group_id) {
             return jsonHelper(102, '必要的参数不能为空: id');
@@ -581,11 +576,6 @@ class GroupController extends Controller
      */
     public function getGroupQRCode(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         // 团购 id
         $group_id = (int)$request->input('group_id');
         if ( !$group_id) {

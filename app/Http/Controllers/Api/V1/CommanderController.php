@@ -6,7 +6,7 @@
  * Time: 11:59 AM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
@@ -172,11 +172,9 @@ class CommanderController extends Controller
     /**
      * 团长列表
      *
-     * @param Request $request
-     *
-     * @return string
+     * @return mixed
      */
-    public function index(Request $request)
+    public function index()
     {
         $result = Commander::where('is_delete', 0)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander');
 
@@ -206,11 +204,6 @@ class CommanderController extends Controller
      */
     public function show(Request $request)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
         $id = (int)$request->input('id');
         if ( !$id) {
             return jsonHelper(102, '必要的参数不能为空: id');
@@ -298,15 +291,8 @@ class CommanderController extends Controller
      *
      * @return string
      */
-    public function applyFor(Request $request)
+    public function applyFor(Request $request, Commander $commander)
     {
-        // 检查小程序用户权限
-        if ( !$this->getSmallid($request)) {
-            return jsonHelper(100, '登陆失败,可能原因：小程序已过期');
-        }
-
-        $obj = new Commander();
-
         // 配送区域
         $delivery = $request->input('delivery');
         if ( !$delivery) {
@@ -321,14 +307,14 @@ class CommanderController extends Controller
                 ]);
             }
         }
-        $obj->delivery_id = $delivery_id;
+        $commander->delivery_id = $delivery_id;
 
         // 团长姓名
         $name = $request->input('name');
         if ( !$name) {
             return jsonHelper(103, '必要的参数不能为空: name');
         }
-        $obj->name = $name;
+        $commander->name = $name;
 
         // 联系方式
         $phone = $request->input('phone');
@@ -339,16 +325,16 @@ class CommanderController extends Controller
                 return jsonHelper(105, '手机号格式不正确: phone');
             }
         }
-        $obj->phone = $phone;
+        $commander->phone = $phone;
 
         // 微信用户的 openid
         $openid = $request->input('openid');
         if ( !$openid) {
             return jsonHelper(106, '必要的参数不能为空: openid');
         }
-        $obj->openid = $openid;
+        $commander->openid = $openid;
 
-        $obj->is_apply = 1;
+        $commander->is_apply = 1;
 
         $is_insert = Commander::where('openid', $openid)->first();
         if ($is_insert) {
@@ -356,7 +342,7 @@ class CommanderController extends Controller
         }
 
         try {
-            $obj->save();
+            $commander->save();
 
             return jsonHelper(0, '操作成功');
         } catch (\Exception $e) {
@@ -367,11 +353,9 @@ class CommanderController extends Controller
     /**
      * 后台申请团长列表
      *
-     * @param Request $request
-     *
-     * @return string
+     * @return mixed
      */
-    public function applyForList(Request $request)
+    public function applyForList()
     {
         $result = Commander::where('is_apply', 1)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/apply-for');
 
@@ -382,8 +366,7 @@ class CommanderController extends Controller
                     $result[$key]['delivery_area'] = $delivery_area->deliver_name;
                 }
 
-                $userinfo = User::where('community_small_id', $this->smallid)->where('openid',
-                    $value->openid)->first();
+                $userinfo = User::where('openid', $value->openid)->first();
                 if ($userinfo) {
                     $result[$key]['user_nickname'] = $userinfo->nickname;
                 }
@@ -426,11 +409,9 @@ class CommanderController extends Controller
     /**
      * 后台数据统计
      *
-     * @param Request $request
-     *
      * @return string
      */
-    public function countMoney(Request $request)
+    public function countMoney()
     {
         $total_money = Commander::sum('total_money');
         $withdraw_money = Commander::sum('withdraw_money');
@@ -493,12 +474,8 @@ class CommanderController extends Controller
 
     /**
      * 团长订单导出为 Excel
-     *
-     * @param Request $request
-     *
-     * @return string
      */
-    public function commanderOrderExportToExcel(Request $request)
+    public function commanderOrderExportToExcel()
     {
         $result = Commander::select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money')->get();
 
@@ -544,6 +521,10 @@ class CommanderController extends Controller
      * @param null   $savefile
      * @param null   $title
      * @param string $sheetname
+     *
+     * @throws \PHPExcel_Exception
+     * @throws \PHPExcel_Reader_Exception
+     * @throws \PHPExcel_Writer_Exception
      */
     private function exportToExcel($data, $savefile = null, $title = null, $sheetname = 'sheet1')
     {

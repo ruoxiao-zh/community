@@ -6,11 +6,10 @@
  * Time: 11:16 AM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\Company;
@@ -20,12 +19,11 @@ class CompanyController extends Controller
     /**
      * 信息展示
      *
-     * @param Request $request
      * @return string
      */
-    public function index(Request $request)
+    public function index()
     {
-        $obj = Company::select('id', 'company_name', 'company_img', 'company_phone', 'company_address', 'company_info', 'company_copyright', 'delivery_type', 'create_at')->get();
+        $obj = Company::select('id', 'company_name', 'company_img', 'company_phone', 'company_address', 'company_info', 'company_copyright', 'delivery_type', 'create_at')->first();
 
         return jsonHelper(0, '获取成功', $obj);
     }
@@ -33,10 +31,9 @@ class CompanyController extends Controller
     /**
      * 上传图片
      *
-     * @param Request $request
      * @return string
      */
-    public function uploadImg(Request $request)
+    public function uploadImg()
     {
         $logo = SaveImage::getSaveImageUrl('images/community/company', 'company_img', '', false);
         if ( !$logo) {
@@ -180,10 +177,10 @@ class CompanyController extends Controller
     /**
      * 数据删除
      *
-     * @param Request $request
      * @return string
+     * @throws \Exception
      */
-    public function destroy(Request $request)
+    public function destroy()
     {
         $obj = Company::first();
         if ( !$obj) {

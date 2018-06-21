@@ -6,7 +6,7 @@
  * Time: 9:11 AM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -22,10 +22,9 @@ class CheckCodeController extends Controller
     /**
      * 获取配送区域
      *
-     * @param Request $request
      * @return string
      */
-    public function getDelivery(Request $request)
+    public function getDelivery()
     {
         $delivery = Delivery::where('is_delete', 0)->select('id', 'deliver_name', 'create_at')->get();
 
@@ -124,10 +123,9 @@ class CheckCodeController extends Controller
     /**
      * 核销员列表
      *
-     * @param Request $request
-     * @return string
+     * @return mixed
      */
-    public function getCheckCodeManager(Request $request)
+    public function getCheckCodeManager()
     {
         $res = CheckCodeManager::where('is_delete', 0)->select('id', 'level', 'delivery_id', 'openid', 'create_at')->orderBy('delivery_id')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/check-code-manager');
         if ($res) {

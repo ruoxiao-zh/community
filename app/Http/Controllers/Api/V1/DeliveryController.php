@@ -6,7 +6,7 @@
  * Time: 11:37 AM
  */
 
-namespace App\Http\Controllers\Community;
+namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
