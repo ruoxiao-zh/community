@@ -127,7 +127,7 @@ class CheckCodeController extends Controller
      */
     public function getCheckCodeManager()
     {
-        $res = CheckCodeManager::where('is_delete', 0)->select('id', 'level', 'delivery_id', 'openid', 'create_at')->orderBy('delivery_id')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/check-code-manager');
+        $res = CheckCodeManager::where('is_delete', 0)->select('id', 'level', 'delivery_id', 'openid', 'create_at')->orderBy('delivery_id')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/check-code-manager');
         if ($res) {
             foreach ($res as $key => $value) {
                 $userinfo = User::where('openid', $value->openid)->select('id', 'nickname')->first();

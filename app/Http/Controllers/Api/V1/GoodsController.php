@@ -211,7 +211,7 @@ class GoodsController extends Controller
      */
     public function index(Request $request)
     {
-        $result = GroupDetail::where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num', 'royalty_rate', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/goods');
+        $result = GroupDetail::where('is_delete', 0)->select('id', 'goods_name', 'goods_specification', 'goods_price', 'goods_num', 'royalty_rate', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/community/goods');
         if ($result) {
             foreach ($result as $key => $value) {
                 $goods_img = GroupDetailPicture::where('goods_id', $value->id)->select('id', 'picture')->get();

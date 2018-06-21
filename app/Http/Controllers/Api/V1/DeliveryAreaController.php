@@ -16,7 +16,7 @@ class DeliveryAreaController extends Controller
 {
     public function index(Request $request)
     {
-        $obj = DeliveryArea::where('is_delete', 0)->select('id', 'delivery_area', 'phone', 'address', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/goods');
+        $obj = DeliveryArea::where('is_delete', 0)->select('id', 'delivery_area', 'phone', 'address', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/community/goods');
 
         return $obj->toJson();
     }

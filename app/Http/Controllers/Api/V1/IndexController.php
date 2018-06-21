@@ -106,7 +106,7 @@ class IndexController extends Controller
      */
     public function startSoonAll(Request $request)
     {
-        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/shopping/srart-soon/all');
+        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '>', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/shopping/srart-soon/all');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -126,7 +126,7 @@ class IndexController extends Controller
      */
     public function onSell(Request $request)
     {
-        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '<', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'click_num', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/onsell');
+        $group_result = Group::where('is_delete', 0)->where('is_putaway', 0)->where('begin_time', '<', time())->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'click_num', 'create_at')->orderBy('is_top', 1)->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/onsell');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }

@@ -68,7 +68,6 @@ class AddressController extends Controller
         }
 
         $result = UserAddress::where([
-            'community_small_id' => $this->smallid,
             'openid'             => $openid,
             'username'           => $username,
             'phone'              => $phone,
@@ -83,7 +82,6 @@ class AddressController extends Controller
             return jsonHelper(0, '操作成功');
         } else {
             UserAddress::create([
-                'community_small_id' => $this->smallid,
                 'openid'             => $openid,
                 'username'           => $username,
                 'phone'              => $phone,
@@ -134,10 +132,6 @@ class AddressController extends Controller
         $obj = UserAddress::find($id);
         if ( !$obj) {
             return jsonHelper(102, '参数异常: id');
-        }
-
-        if ($obj->community_small_id != $this->smallid) {
-            return jsonHelper(103, '权限不足,无法删除');
         }
 
         $obj->delete();

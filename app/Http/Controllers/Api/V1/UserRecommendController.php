@@ -61,7 +61,7 @@ class UserRecommendController extends Controller
      */
     public function index(Request $request, UserRecommend $userRecommend)
     {
-        $obj = $userRecommend::select('id', 'username', 'phone', 'info')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/user-recommend');
+        $obj = $userRecommend::select('id', 'username', 'phone', 'info')->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/user-recommend');
 
         return $obj->toJson();
     }

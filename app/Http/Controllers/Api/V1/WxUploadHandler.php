@@ -25,8 +25,7 @@ class WxUploadHandler
         // dd($file->getClientOriginalName());
         // 文件具体存储的物理路径，`public_path()` 获取的是 `public` 文件夹的物理路径。
         // 值如：/home/vagrant/Code/larabbs/public/uploads/images/avatars/201709/21/
-        $upload_path = '/data/wwwroot/default/ailetutourism/storage/cert/community';
-        // $upload_path = '/Applications/XAMPP/xamppfiles/htdocs/ailetutourism/storage/cert/grouppurchase';
+        $upload_path = __DIR__.'../../../../../storage/cert/community';
 
         // 获取文件的后缀名，因图片从剪贴板里黏贴时后缀名为空，所以此处确保后缀一直存在
         $extension = strtolower($file->getClientOriginalExtension()) ?: 'pem';
@@ -54,7 +53,7 @@ class WxUploadHandler
         $res = $file->move($upload_path. '/' . $file_prefix, $file->getClientOriginalName());
 
         if ($res) {
-            return '/../../../../../storage/cert/community/' . $file_prefix . '/' . $file->getClientOriginalName();
+            return '/../../../storage/cert/community/' . $file_prefix . '/' . $file->getClientOriginalName();
         } else {
             return false;
         }

@@ -38,7 +38,7 @@ class SaveImage
             $realpath = storage_path($path) . "/$pre{$timestamp}.$type";
             if (file_put_contents($realpath, base64_decode(str_replace($result[1], '', $base64)))) {
 
-                return PUBLIC_ROOT . "/storage/$path/$pre{$timestamp}.$type";
+                return  "/storage/$path/$pre{$timestamp}.$type";
             }
 
         }
@@ -106,7 +106,7 @@ class SaveImage
             imagedestroy($src_img);
             clearstatcache();// 函数清除文件状态缓存。
             //返回保存的地址
-            return PUBLIC_ROOT . "/storage/$path/$pre{$timestamp}.$type";
+            return  "/storage/$path/$pre{$timestamp}.$type";
         } else {
             Log::info('没有传入图片或者传入出错');
             //没文件传来
@@ -173,7 +173,7 @@ class SaveImage
                 imagedestroy($src_img);
                 clearstatcache();// 函数清除文件状态缓存。
                 //返回保存的地址
-                $str = PUBLIC_ROOT . "/storage/$path/$pre{$timestamp}.$type";
+                $str =  "/storage/$path/$pre{$timestamp}.$type";
                 array_push($arr, $str);
             } else {
                 Log::info('没有传入图片或者传入出错');
@@ -259,7 +259,7 @@ class SaveImage
             imagedestroy($dec_img);
             clearstatcache();// 函数清除文件状态缓存。
             //返回保存的地址
-            return PUBLIC_ROOT . "/storage/$realpath";
+            return  "/storage/$realpath";
         }
         //没文件传来
         clearstatcache();// 函数清除文件状态缓存。

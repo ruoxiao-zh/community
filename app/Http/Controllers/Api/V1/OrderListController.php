@@ -40,7 +40,7 @@ class OrderListController extends Controller
         $result = GroupOrder::where('is_delete', 0)->select('id',
             'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_buy_for_commander',
             'is_delivery', 'delivery_area_id', 'express', 'express_number', 'create_at')->orderBy('create_at',
-            'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/back');
+            'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/orderlist/back');
 
         // 后台订单详情
         $this->backOrderDetail($result);
@@ -103,7 +103,7 @@ class OrderListController extends Controller
         $order_status = (int)$request->input('order_status');
 
         // 所有订单
-        $result = GroupOrder::where('is_delete', 0)->where('openid', $openid)->where('order_status', $order_status)->select('id', 'order_number', 'group_id', 'username', 'phone', 'address', 'order_status', 'total_money', 'token', 'express', 'express_number', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/front');
+        $result = GroupOrder::where('is_delete', 0)->where('openid', $openid)->where('order_status', $order_status)->select('id', 'order_number', 'group_id', 'username', 'phone', 'address', 'order_status', 'total_money', 'token', 'express', 'express_number', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/orderlist/front');
 
         // 前台订单详情
         $this->frontOrderDetail($result);
@@ -184,7 +184,7 @@ class OrderListController extends Controller
                 strtotime($request->input('begin_time')));
             ($request->input('end_time') !== '0') && $query->where('create_at', '<',
                 strtotime($request->input('end_time')));
-        })->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_buy_for_commander', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/orderlist/back');
+        })->select('id', 'order_number', 'username', 'phone', 'address', 'order_status', 'total_money', 'is_buy_for_commander', 'is_delivery', 'delivery_area_id', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/orderlist/back');
 
         // 后台订单详情
         $this->backOrderDetail($result);
@@ -298,7 +298,7 @@ class OrderListController extends Controller
         // 获取小程序码 api
         $api_url = 'https://api.weixin.qq.com/wxa/getwxacode?access_token=' . $access_token;
 
-        $qrcode = '/ailetutourism/storage/images/community/qrcode/' . $pay_config->appid . '_' . $order_id . '.jpg';
+        $qrcode = '/storage/images/community/qrcode/' . $pay_config->appid . '_' . $order_id . '.jpg';
         $filename = '../storage/images/community/qrcode/' . $pay_config->appid . '_' . $order_id . '.jpg';
         $data = '{"path": "pages/hexiao/hexiao?order_id=' . $order_id . '"}';
 

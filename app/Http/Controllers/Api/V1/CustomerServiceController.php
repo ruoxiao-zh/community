@@ -92,8 +92,8 @@ class CustomerServiceController extends Controller
                 'link'    => [
                     'title'       => '欢迎您的到来，竭诚为您服务！',
                     'description' => '点击本条消息加我微信, 随时找我聊天!',
-                    'url'         => 'https://www.ailetugo.com/ailetutourism/public/community/get-qrcode?customer_service=' . $userinfo[0]['id'],
-                    'thumb_url'   => 'https://www.ailetugo.com' . $qrcode,
+                    'url'         => env('APP_URL') . '/public/api/v1/get-qrcode?customer_service=' . $userinfo[0]['id'],
+                    'thumb_url'   => env('APP_URL') . $qrcode,
                 ]
             ];
 
@@ -192,9 +192,6 @@ class CustomerServiceController extends Controller
             }
 
             if ($logo) {
-                $oldlogo = $obj->qrcode;
-                $oldlogo = str_replace('/ailetutourism', '../', $oldlogo);
-                SaveImage::deletefile($oldlogo);
                 $obj->qrcode = $logo;
             }
         } else {

@@ -176,7 +176,7 @@ class CommanderController extends Controller
      */
     public function index()
     {
-        $result = Commander::where('is_delete', 0)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander');
+        $result = Commander::where('is_delete', 0)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/commander');
 
         if ($result) {
             foreach ($result as $key => $value) {
@@ -265,7 +265,7 @@ class CommanderController extends Controller
             ($request->input('name') !== '') && $query->where('name', 'like', $request->input('name') . '%');
             ($request->input('delivery_id') !== '') && $query->where('delivery_id', $request->input('delivery_id'));
         })->select('id', 'name', 'phone', 'openid', 'delivery_id', 'total_money', 'withdraw_money', 'residue_money', 'create_at')
-            ->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/search');
+            ->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/commander/search');
 
         if ($result) {
             foreach ($result as $key => $value) {
@@ -357,7 +357,7 @@ class CommanderController extends Controller
      */
     public function applyForList()
     {
-        $result = Commander::where('is_apply', 1)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/commander/apply-for');
+        $result = Commander::where('is_apply', 1)->select('id', 'name', 'phone', 'openid', 'delivery_id', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/commander/apply-for');
 
         if ($result) {
             foreach ($result as $key => $value) {

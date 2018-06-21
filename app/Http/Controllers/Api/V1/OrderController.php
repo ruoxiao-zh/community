@@ -26,7 +26,8 @@ class OrderController extends Controller
      *
      * @param Request $request
      *
-     * @return string
+     * @return \Exception|string
+     * @throws \Exception
      */
     public function placeOrder(Request $request)
     {

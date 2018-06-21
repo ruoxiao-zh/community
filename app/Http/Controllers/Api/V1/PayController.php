@@ -84,7 +84,7 @@ class PayController extends Controller
         // 微信支付的 key
 //        $wxOrderData->SetAttach($pay_config['community_small_id']);
         // 接受微信的回调结果
-        $wxOrderData->SetNotify_url('https://www.ailetugo.com/ailetutourism/public/community/pay-notify');
+        $wxOrderData->SetNotify_url(env('APP_URL') . '/public/api/v1/pay-notify');
 
         return $this->getPaySignature($wxOrderData, $obj, $pay_config);
     }
@@ -93,8 +93,11 @@ class PayController extends Controller
      * 向微信请求订单号并生成签名
      *
      * @param $wxOrderData
+     * @param $obj
+     * @param $pay_config
      *
-     * @return mixed
+     * @return array
+     * @throws \WxPayException
      */
     private function getPaySignature($wxOrderData, $obj, $pay_config)
     {
@@ -290,6 +293,7 @@ class PayController extends Controller
      * @param $pay_config
      *
      * @return string
+     * @throws \WxPayException
      */
     private function makeWxPreRefund($obj, $pay_config)
     {

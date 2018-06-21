@@ -29,10 +29,9 @@ class GroupController extends Controller
     /**
      * 上传拼团介绍图片
      *
-     * @param Request $request
      * @return string
      */
-    public function groupUploadImg(Request $request)
+    public function groupUploadImg()
     {
         $logo = SaveImage::getSaveImageUrl('images/community/group', 'introduce_picture', '', false);
         if ( !$logo) {
@@ -46,7 +45,9 @@ class GroupController extends Controller
      * 添加团购
      *
      * @param Request $request
+     *
      * @return string
+     * @throws \Exception
      */
     public function create(Request $request)
     {
@@ -126,7 +127,9 @@ class GroupController extends Controller
      * 修改团购
      *
      * @param Request $request
-     * @return string
+     *
+     * @return \Exception|string
+     * @throws \Exception
      */
     public function update(Request $request)
     {
@@ -184,7 +187,7 @@ class GroupController extends Controller
         // 开启数据库事务处理
         \DB::beginTransaction();
         try {
-            CommunityGroup::where('id', $group_id)->update([
+            Group::where('id', $group_id)->update([
                 'theme'              => $theme,
                 'introduce'          => $introduce,
                 'begin_time'         => $begin_time,
@@ -253,7 +256,7 @@ class GroupController extends Controller
                 if ($goods_img) {
                     $goods_img = $goods_img->toArray();
                 }
-                $goods_info[$key]['picture'] = $goods_img;
+                $no_group_goods_info[$key]['picture'] = $goods_img;
             }
         }
         $group_result['no_group_goods_info'] = $no_group_goods_info;
@@ -264,12 +267,11 @@ class GroupController extends Controller
     /**
      * 拼团列表
      *
-     * @param Request $request
      * @return string
      */
-    public function show(Request $request)
+    public function show()
     {
-        $group_result = Group::where('is_delete', 0)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_top','is_putaway', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/group');
+        $group_result = Group::where('is_delete', 0)->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_top','is_putaway', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/community/group');
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
         }
@@ -391,10 +393,9 @@ class GroupController extends Controller
     /**
      * 商品列表(未参与团购与未删除)
      *
-     * @param Request $request
      * @return string
      */
-    public function goodsList(Request $request)
+    public function goodsList()
     {
         $goods_info = GroupDetail::where('group_id', 0)->where('is_delete', 0)->select('id', 'goods_name', 'create_at')->get();
 
@@ -413,7 +414,7 @@ class GroupController extends Controller
             ($request->input('theme') !== '') && $query->where('theme', 'like', $request->input('theme') . '%');
             ($request->input('begin_time') !== '') && $query->where('begin_time', '>=', strtotime($request->input('begin_time')));
             ($request->input('end_time') !== '') && $query->where('end_time', '<=', strtotime($request->input('end_time')));
-        })->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_putaway', 'create_at')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/group/search');
+        })->select('id', 'theme', 'introduce', 'begin_time', 'end_time', 'introduce_picture', 'is_putaway', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/group/search');
 
         if ( !$group_result) {
             return jsonHelper(103, '传入的参数异常: id');
@@ -511,7 +512,7 @@ class GroupController extends Controller
             return jsonHelper(102, '必要的参数不能为空: id');
         }
 
-        $result = GroupOrder::where('group_id', $group_id)->select('id', 'openid', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath('https://www.ailetugo.com/ailetutourism/public/community/front/group/person');
+        $result = GroupOrder::where('group_id', $group_id)->select('id', 'openid', 'create_at')->orderBy('create_at', 'desc')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/front/group/person');
         if ($result) {
             foreach ($result as $key => $value) {
                 // 单个订单详情
@@ -612,7 +613,7 @@ class GroupController extends Controller
         // 获取小程序码 api
         $api_url = 'https://api.weixin.qq.com/wxa/getwxacode?access_token=' . $access_token;
 
-        $qrcode = '/ailetutourism/storage/images/community/group/qrcode/' . $pay_config->appid . '_' . $group_id . '.jpg';
+        $qrcode = '/storage/images/community/group/qrcode/' . $pay_config->appid . '_' . $group_id . '.jpg';
         $filename = '../storage/images/community/group/qrcode/' . $pay_config->appid . '_' . $group_id . '.jpg';
         // 需要带着团长的 id
         // TODO...
