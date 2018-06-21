@@ -11,7 +11,6 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\Commander;
 use App\Models\CommanderOrder;
@@ -24,7 +23,7 @@ use App\Models\GroupDetail;
 // 微信支付 SDK
 require __DIR__ . '/../../../../SDK/WxPay/WxPay.Api.php';
 
-class PayController extends Controller
+class PayController extends BaseController
 {
     /**
      * 支付检测

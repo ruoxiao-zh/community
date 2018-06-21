@@ -10,9 +10,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Models\UserAddress;
-use App\Http\Controllers\Controller;
 
-class AddressController extends Controller
+class AddressController extends BaseController
 {
     /**
      * 添加或修改收货地址

@@ -10,11 +10,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\Company;
 
-class CompanyController extends Controller
+class CompanyController extends BaseController
 {
     /**
      * 信息展示

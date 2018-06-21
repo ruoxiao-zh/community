@@ -9,12 +9,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\DeliveryArea;
 use App\Models\UserDelivery;
 
-class UserDeliveryController extends Controller
+class UserDeliveryController extends BaseController
 {
     public function addUserDelivery(Request $request)
     {

@@ -10,7 +10,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\Commander;
 use App\Models\CommanderOrder;
@@ -19,7 +18,7 @@ use App\Models\GroupOrderDetail;
 use App\Models\Delivery;
 use App\Models\GroupDetail;
 
-class OrderController extends Controller
+class OrderController extends BaseController
 {
     /**
      * 下单

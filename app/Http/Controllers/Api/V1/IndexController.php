@@ -11,7 +11,6 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\GroupOrder;
 use App\Models\GroupOrderDetail;
@@ -22,7 +21,7 @@ use App\Models\GroupDetail;
 use App\Models\GroupDetailPicture;
 
 
-class IndexController extends Controller
+class IndexController extends BaseController
 {
     /**
      * 更新或存储微信用户信息

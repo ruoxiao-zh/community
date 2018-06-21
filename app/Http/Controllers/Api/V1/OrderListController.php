@@ -11,7 +11,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\PayConfig;
 use Illuminate\Http\Request;
 use App\Common\CurlHelper;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\CheckCodeManager;
 use App\Models\Company;
@@ -26,7 +25,7 @@ use App\Models\GroupOrderDetail;
 // Excel 数据操作
 require_once __DIR__ . '/../../../../SDK/Excel/PHPExcel.php';
 
-class OrderListController extends Controller
+class OrderListController extends BaseController
 {
     /**
      * 后台订单列表

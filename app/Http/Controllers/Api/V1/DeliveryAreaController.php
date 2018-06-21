@@ -9,12 +9,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Models\DeliveryArea;
 
-class DeliveryAreaController extends Controller
+class DeliveryAreaController extends BaseController
 {
-    public function index(Request $request)
+    public function index()
     {
         $obj = DeliveryArea::where('is_delete', 0)->select('id', 'delivery_area', 'phone', 'address', 'create_at')->paginate(15)->setPath(env('APP_URL') . '/public/api/v1/community/goods');
 

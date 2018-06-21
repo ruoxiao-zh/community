@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
 use App\Common\CurlHelper;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\Commander;
 use App\Models\GroupOrder;
@@ -24,7 +23,7 @@ use App\Models\GroupDetailPicture;
 use App\Models\PayConfig;
 use App\Models\GroupUserClick;
 
-class GroupController extends Controller
+class GroupController extends BaseController
 {
     /**
      * 上传拼团介绍图片

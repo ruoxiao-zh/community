@@ -11,12 +11,11 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\GroupDetail;
 use App\Models\GroupDetailPicture;
 
-class GoodsController extends Controller
+class GoodsController extends BaseController
 {
     /**
      * 上传商品图片

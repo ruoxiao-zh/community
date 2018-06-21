@@ -9,12 +9,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 
-class LoginController extends Controller
+class LoginController extends BaseController
 {
     public function login(Request $request)
     {
@@ -29,7 +28,6 @@ class LoginController extends Controller
         }
 
         $admin = Admin::first();
-
         if ($admin->username != $username || Crypt::decryptString($admin->password) != $password) {
             return jsonHelper(104, '用户名或密码错误');
         }
@@ -41,12 +39,12 @@ class LoginController extends Controller
 
     public function logout()
     {
-        Cache::pull('admin');
+        Cache::forget('admin');
 
         return jsonHelper(0, '登出成功');
     }
 
-    public function update(Request $request)
+    public function updatePass(Request $request)
     {
         $new_password = $request->new_password;
         if ( !$new_password) {
@@ -63,7 +61,7 @@ class LoginController extends Controller
 
         $admin->update(['password' => Crypt::encryptString($request->password)]);
 
-        Cache::pull('admin');
+        Cache::forget('admin');
 
         return jsonHelper(0, '密码修改成功, 请重新登录');
     }

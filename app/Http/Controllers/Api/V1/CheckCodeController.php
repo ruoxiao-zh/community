@@ -8,7 +8,6 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +16,7 @@ use App\Models\Delivery;
 use App\Models\CheckCodeManager;
 use App\Models\User;
 
-class CheckCodeController extends Controller
+class CheckCodeController extends BaseController
 {
     /**
      * 获取配送区域

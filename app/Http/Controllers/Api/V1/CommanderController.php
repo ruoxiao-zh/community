@@ -11,7 +11,6 @@ namespace App\Http\Controllers\Api\V1;
 use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\CommanderWithdrawRecord;
 use App\Models\Delivery;
@@ -26,7 +25,7 @@ use App\Models\CommanderOrder;
 
 require_once __DIR__ . '/../../../../SDK/Excel/PHPExcel.php';
 
-class CommanderController extends Controller
+class CommanderController extends BaseController
 {
     /**
      * 检索用户

@@ -12,13 +12,12 @@ use Illuminate\Http\Request;
 use App\Common\SaveImage;
 use Illuminate\Support\Facades\DB;
 use App\Common\CurlHelper;
-use App\Http\Controllers\Controller;
 // 数据库模型
 use App\Models\PayConfig;
 use App\Models\User;
 use App\Models\CustomerService;
 
-class CustomerServiceController extends Controller
+class CustomerServiceController extends BaseController
 {
     /**
      * 验证消息的确来自微信服务器
