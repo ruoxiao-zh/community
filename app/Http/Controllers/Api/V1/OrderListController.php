@@ -8,6 +8,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Models\PayConfig;
 use Illuminate\Http\Request;
 use App\Common\CurlHelper;
 use App\Http\Controllers\Controller;
@@ -30,11 +31,9 @@ class OrderListController extends Controller
     /**
      * 后台订单列表
      *
-     * @param Request $request
-     *
-     * @return string
+     * @return mixed
      */
-    public function getBackOrderList(Request $request)
+    public function getBackOrderList()
     {
         // 所有订单
         $result = GroupOrder::where('is_delete', 0)->select('id',
