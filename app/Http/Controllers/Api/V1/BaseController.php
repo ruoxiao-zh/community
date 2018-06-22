@@ -16,7 +16,6 @@ class BaseController extends Controller
     public function __construct()
     {
         if ( !Cache::get('admin')) {
-             // return jsonHelper(102, '请登录, 未登录无法访问');
             echo '请登录, 未登录无法访问';die;
         }
     }

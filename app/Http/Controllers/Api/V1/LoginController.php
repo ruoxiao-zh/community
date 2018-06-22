@@ -8,12 +8,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Admin;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Cache;
 
-class LoginController extends BaseController
+class LoginController extends Controller
 {
     public function login(Request $request)
     {
@@ -39,6 +40,10 @@ class LoginController extends BaseController
 
     public function logout()
     {
+        if ( !Cache::get('admin')) {
+            return jsonHelper(102, '请登录, 未登录无法访问');
+        }
+
         Cache::forget('admin');
 
         return jsonHelper(0, '登出成功');
@@ -46,6 +51,10 @@ class LoginController extends BaseController
 
     public function updatePass(Request $request)
     {
+        if ( !Cache::get('admin')) {
+            return jsonHelper(102, '请登录, 未登录无法访问');
+        }
+
         $new_password = $request->new_password;
         if ( !$new_password) {
             return jsonHelper(102, '必要的参数不能为空: new_password');
